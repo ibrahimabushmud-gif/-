@@ -37,7 +37,7 @@ body {
   color: var(--text);
 }
 
-button, input, select {
+button, input, select, textarea {
   font-family: inherit;
 }
 
@@ -559,6 +559,18 @@ button {
   font-size: 12px;
 }
 
+.explanation-box {
+  margin-top: 12px;
+  padding: 14px;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 10px;
+  font-size: 12px;
+  line-height: 1.9;
+  color: #14532d;
+  white-space: pre-wrap;
+}
+
 .option {
   display: block;
   background: white;
@@ -959,11 +971,11 @@ button {
     </div>
   </section>
 
-  <!-- إنشاء الأسئلة -->
+  <!-- إنشاء الأسئلة والشرح الذكي -->
   <section class="page" id="create">
     <div class="page-title">
-      <h1>✨ إنشاء الأسئلة</h1>
-      <p>خصص الاختبار حسب المادة المختارة ومحتواها مع ترجمة تلقائية للأسئلة الإنجليزية.</p>
+      <h1>✨ إنشاء الأسئلة والشرح الذكي</h1>
+      <p>خصص الاختبار أو اطلب شرحاً مبسطاً من المادة المختارة مع ترجمة للأسئلة الإنجليزية.</p>
     </div>
 
     <div class="panel">
@@ -1011,12 +1023,19 @@ button {
         </select>
       </div>
 
-      <button class="primary-btn" onclick="generateQuestionsFromMaterial()">
-        ✨ إنشاء الأسئلة من المادة
-      </button>
+      <div class="btn-row">
+        <button class="primary-btn" id="genQuizBtn" onclick="generateQuestionsFromMaterial()">
+          ✨ إنشاء الأسئلة من المادة
+        </button>
+        <button class="secondary-btn" style="margin-top:15px;padding:11px 16px" id="explainMatBtn" onclick="explainSelectedMaterial()">
+          💡 شرح ملخص للمادة
+        </button>
+      </div>
+
+      <div id="aiSummaryBox" class="explanation-box" style="display:none"></div>
 
       <p class="muted" style="margin-top:12px">
-        يتم اختيار الجمل الواضحة من المادة وتوفير ترجمة عربية فورية للأسئلة الإنجليزية.
+        يعتمد النظام على الذكاء الاصطناعي عند توفر الإعدادات في صفحة "الإعدادات"، ويعود تلقائياً للتحليل المحلي عند عدم ضبط مفتاح خارجي.
       </p>
     </div>
 
@@ -1081,7 +1100,7 @@ button {
   <section class="page" id="voice">
     <div class="page-title">
       <h1>🎙️ التحدث عبر الصوت</h1>
-      <p>تحدث بصوتك مع مساعد Study Mate وشاهد تعابير الوجه وهي تتفاعل مع الكلمات.</p>
+      <p>تحدث بصوتك مع مساعد Study Mate الذكي وشاهد تعابير الوجه وهي تتفاعل مع الكلمات.</p>
     </div>
 
     <div class="panel">
@@ -1177,7 +1196,7 @@ button {
   <section class="page" id="settings">
     <div class="page-title">
       <h1>⚙️ الإعدادات</h1>
-      <p>إعدادات موقعك الشخصي.</p>
+      <p>إعدادات موقعك الشخصي وربط الذكاء الاصطناعي.</p>
     </div>
 
     <div class="panel">
@@ -1187,6 +1206,34 @@ button {
         <input class="form-control" id="studentName" value="الطالب">
       </div>
       <button class="primary-btn" onclick="saveSettings()">حفظ الاسم</button>
+    </div>
+
+    <div class="panel">
+      <h3>🤖 إعدادات الذكاء الاصطناعي (المرحلة الثالثة)</h3>
+      <p class="muted" style="margin-bottom:14px">
+        يمكنك ربط الموقع بواجهة متوافقة مع OpenAI (مثل خادم وسيط أو مزود يدعم `/v1/chat/completions`). إذا تركتها فارغة فسيعمل الموقع بالوضع المحلي الذكي تلقائياً.
+      </p>
+
+      <div class="form-group">
+        <label>رابط واجهة الذكاء الاصطناعي (Endpoint URL)</label>
+        <input class="form-control" id="aiEndpointUrl" placeholder="مثال: https://api.openai.com/v1/chat/completions أو رابط Worker الخاص بك">
+      </div>
+
+      <div class="form-group">
+        <label>مفتاح API (اختياري - يُحفظ محلياً على جهازك فقط)</label>
+        <input type="password" class="form-control" id="aiApiKey" placeholder="sk-... أو اتركه فارغاً إذا كان الخادم الوسيط يتولى المصادقة">
+      </div>
+
+      <div class="form-group">
+        <label>اسم النموذج (Model)</label>
+        <input class="form-control" id="aiModelName" placeholder="مثال: gpt-4o-mini">
+      </div>
+
+      <div class="btn-row">
+        <button class="primary-btn" onclick="saveAISettings()">💾 حفظ إعدادات الذكاء الاصطناعي</button>
+        <button class="secondary-btn" style="margin-top:15px;padding:11px 16px" onclick="clearAISettings()">مسح الإعدادات</button>
+      </div>
+      <div id="aiSettingsStatus" class="muted" style="margin-top:12px"></div>
     </div>
 
     <div class="panel">
@@ -1236,6 +1283,7 @@ function showPage(pageId) {
   if (pageId === 'library') renderMaterials();
   if (pageId === 'results') renderResults();
   if (pageId === 'create') updateSubjectOptions();
+  if (pageId === 'settings') loadAISettingsToForm();
 }
 
 document.querySelectorAll('.nav-btn').forEach(button => {
@@ -1903,8 +1951,6 @@ function updateSubjectOptions() {
   ).join('');
 }
 
-/* حماية النصوص التي يعرضها الموقع */
-
 function escapeHTML(value) {
   return String(value).replace(/[&<>"']/g, char => ({
     '&': '&amp;',
@@ -1913,6 +1959,104 @@ function escapeHTML(value) {
     '"': '&quot;',
     "'": '&#039;'
   })[char]);
+}
+
+/* =========================================================
+   المرحلة الثالثة: إعدادات الذكاء الاصطناعي والاتصال المرن
+   ========================================================= */
+
+function getAISettings() {
+  try {
+    return JSON.parse(localStorage.getItem('studyMateAISettings') || '{}');
+  } catch (_) {
+    return {};
+  }
+}
+
+function loadAISettingsToForm() {
+  const cfg = getAISettings();
+  const ep = document.getElementById('aiEndpointUrl');
+  const key = document.getElementById('aiApiKey');
+  const model = document.getElementById('aiModelName');
+  const status = document.getElementById('aiSettingsStatus');
+  if (!ep || !key || !model) return;
+
+  ep.value = cfg.endpoint || '';
+  key.value = cfg.apiKey || '';
+  model.value = cfg.model || 'gpt-4o-mini';
+
+  if (status) {
+    status.textContent = cfg.endpoint
+      ? `مفعل حالياً: ${cfg.endpoint} (النموذج: ${cfg.model || 'gpt-4o-mini'})`
+      : 'الوضع الحالي: الذكاء المحلي الذكي (بدون رابط خارجي مضبوط).';
+  }
+}
+
+function saveAISettings() {
+  const endpoint = document.getElementById('aiEndpointUrl').value.trim();
+  const apiKey = document.getElementById('aiApiKey').value.trim();
+  const model = (document.getElementById('aiModelName').value || '').trim() || 'gpt-4o-mini';
+
+  localStorage.setItem('studyMateAISettings', JSON.stringify({ endpoint, apiKey, model }));
+  loadAISettingsToForm();
+  alert('تم حفظ إعدادات الذكاء الاصطناعي.');
+}
+
+function clearAISettings() {
+  localStorage.removeItem('studyMateAISettings');
+  loadAISettingsToForm();
+  alert('تم مسح إعدادات الذكاء الاصطناعي الخارجية.');
+}
+
+async function callAIModel(systemPrompt, userPrompt) {
+  const cfg = getAISettings();
+  if (!cfg.endpoint) return null;
+
+  const headers = { 'Content-Type': 'application/json' };
+  if (cfg.apiKey) {
+    headers['Authorization'] = `Bearer ${cfg.apiKey}`;
+  }
+
+  const body = {
+    model: cfg.model || 'gpt-4o-mini',
+    messages: [
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: userPrompt }
+    ],
+    temperature: 0.4
+  };
+
+  const res = await fetch(cfg.endpoint, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(body)
+  });
+
+  if (!res.ok) {
+    throw new Error(`فشل طلب الذكاء الاصطناعي (${res.status})`);
+  }
+
+  const data = await res.json();
+  const reply = data?.choices?.[0]?.message?.content || data?.reply || data?.answer || '';
+  return String(reply || '').trim() || null;
+}
+
+function getMaterialContextExcerpt(material, maxChars = 4500) {
+  if (!material) return '';
+  const sections = Array.isArray(material.sections) && material.sections.length
+    ? material.sections
+    : [{ title: 'المحتوى', text: material.fullText || '' }];
+
+  let acc = '';
+  for (const sec of sections) {
+    const chunk = `[${sec.title}]\n${sec.text || ''}\n\n`;
+    if (acc.length + chunk.length > maxChars) {
+      acc += chunk.slice(0, Math.max(0, maxChars - acc.length));
+      break;
+    }
+    acc += chunk;
+  }
+  return acc.trim();
 }
 
 /* =========================================================
@@ -1942,7 +2086,7 @@ function hasEnglishLetters(str) {
 }
 
 /* =========================================================
-   توليد الأسئلة الواضحة مع ترجمة عربية للأسئلة الإنجليزية
+   توليد الأسئلة والشرح الذكي مع ترجمة عربية للأسئلة الإنجليزية
    ========================================================= */
 
 let currentGeneratedQuiz = [];
@@ -2119,12 +2263,45 @@ function buildQuestionsFromMaterial(material, type, difficulty, count) {
   return questions;
 }
 
-async function generateQuestionsFromMaterial() {
+async function generateAIQuestionsFromMaterial(material, type, difficulty, count, sourceMode) {
+  const excerpt = getMaterialContextExcerpt(material, 4500);
+  if (!excerpt) return null;
+
+  const systemPrompt = `أنت مساعد تعليمي ذكي في منصة Study Mate. أنشئ أسئلة دراسية واضحة ودقيقة باللغة العربية (أو بالإنجليزية إذا كانت المادة إنجليزية مع توفير ترجمة عربية). أعد النتيجة كـ JSON فقط بدون أي نص إضافي أو علامات markdown، بالشكل التالي:
+{"questions":[{"kind":"mcq|tf|fill","question":"نص السؤال","englishTranslation":"ترجمة عربية إن كان السؤال بالإنجليزية وإلا سلسلة فارغة","options":["خيار1","خيار2","خيار3","خيار4"],"answer":0,"correctText":"للفراغ فقط","source":"اسم القسم أو الصفحة","explanation":"شرح مختصر للإجابة"}]}`;
+
+  const userPrompt = `المادة: ${material.name}
+النوع المطلوب: ${type}
+المستوى: ${difficulty}
+العدد المطلوب: ${count}
+النمط: ${sourceMode}
+مقتطف من المادة:
+${excerpt}`;
+
+  const rawReply = await callAIModel(systemPrompt, userPrompt);
+  if (!rawReply) return null;
+
+  const cleanedJson = rawReply.replace(/^```json\s*/i, '').replace(/```$/i, '').trim();
+  const parsed = JSON.parse(cleanedJson);
+  if (!Array.isArray(parsed?.questions) || !parsed.questions.length) return null;
+
+  return parsed.questions.slice(0, count).map(q => ({
+    kind: q.kind === 'tf' || q.kind === 'fill' ? q.kind : 'mcq',
+    question: String(q.question || '').trim(),
+    translateSource: '',
+    aiArabicTranslation: String(q.englishTranslation || '').trim(),
+    options: Array.isArray(q.options) && q.options.length ? q.options : ['صح', 'خطأ'],
+    answer: Number.isInteger(q.answer) ? q.answer : 0,
+    correctText: String(q.correctText || '').trim(),
+    source: String(q.source || material.name).trim(),
+    explanation: String(q.explanation || '').trim()
+  })).filter(q => q.question);
+}
+
+async function explainSelectedMaterial() {
   const subjectId = Number(document.getElementById('questionSubject').value);
-  const type = document.getElementById('questionType').value;
-  const difficulty = document.getElementById('difficulty').value;
-  const count = Number(document.getElementById('questionCount').value);
-  const container = document.getElementById('generatedQuestions');
+  const summaryBox = document.getElementById('aiSummaryBox');
+  const btn = document.getElementById('explainMatBtn');
 
   const material = materials.find(m => m.id === subjectId);
   if (!material) {
@@ -2132,40 +2309,109 @@ async function generateQuestionsFromMaterial() {
     return;
   }
 
+  btn.disabled = true;
+  summaryBox.style.display = 'block';
+  summaryBox.textContent = '⏳ جاري إعداد شرح مبسط للمادة...';
+
   try {
-    currentGeneratedQuiz = buildQuestionsFromMaterial(material, type, difficulty, count);
+    const excerpt = getMaterialContextExcerpt(material, 4500);
+    let aiExplanation = null;
+
+    try {
+      aiExplanation = await callAIModel(
+        'أنت معلم يشرح المواد الدراسية للطالب بلغة عربية واضحة ومنظمة ومبسطة مع نقاط رئيسية.',
+        `اشرح ولخّص المادة التالية للطالب:\nالعنوان: ${material.name}\nالمحتوى:\n${excerpt}`
+      );
+    } catch (_) {
+      aiExplanation = null;
+    }
+
+    if (aiExplanation) {
+      summaryBox.textContent = `🤖 شرح الذكاء الاصطناعي لمادة (${material.name}):\n\n${aiExplanation}`;
+    } else {
+      const headings = Array.isArray(material.headings) && material.headings.length
+        ? material.headings.slice(0, 6).join('\n• ')
+        : 'تم استخراج النص وتقسيمه إلى أقسام.';
+      const sampleSentences = extractSentencesWithSource(material).slice(0, 4).map(s => `• ${s.sentence}`).join('\n');
+      summaryBox.textContent = `💡 ملخص سريع من مادة (${material.name}):\n\nأبرز العناوين/النقاط:\n• ${headings}\n\nأفكار من النص:\n${sampleSentences}`;
+    }
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+async function generateQuestionsFromMaterial() {
+  const subjectId = Number(document.getElementById('questionSubject').value);
+  const type = document.getElementById('questionType').value;
+  const difficulty = document.getElementById('difficulty').value;
+  const count = Number(document.getElementById('questionCount').value);
+  const sourceMode = document.getElementById('questionSource').value;
+  const container = document.getElementById('generatedQuestions');
+  const genBtn = document.getElementById('genQuizBtn');
+
+  const material = materials.find(m => m.id === subjectId);
+  if (!material) {
+    alert('يرجى رفع مادة دراسية واختيارها أولاً.');
+    return;
+  }
+
+  genBtn.disabled = true;
+
+  try {
+    let usedAI = false;
+    try {
+      const aiQuestions = await generateAIQuestionsFromMaterial(material, type, difficulty, count, sourceMode);
+      if (aiQuestions && aiQuestions.length) {
+        currentGeneratedQuiz = aiQuestions;
+        usedAI = true;
+      }
+    } catch (aiErr) {
+      console.warn('العودة للتوليد المحلي للأسئلة:', aiErr);
+    }
+
+    if (!usedAI) {
+      currentGeneratedQuiz = buildQuestionsFromMaterial(material, type, difficulty, count);
+    }
+
     activeQuizSubjectName = material.name;
 
     container.innerHTML = `
       <div class="panel">
         <div class="section-heading">
           <div>
-            <h3>📝 أسئلة مستخرجة من: ${escapeHTML(material.name)}</h3>
+            <h3>📝 أسئلة مستخرجة من: ${escapeHTML(material.name)} ${usedAI ? '<span class="tag">🤖 ذكاء اصطناعي</span>' : '<span class="tag">⚡ تحليل محلي</span>'}</h3>
             <p>النوع: ${escapeHTML(type)} | الصعوبة: ${escapeHTML(difficulty)} | العدد: ${currentGeneratedQuiz.length}</p>
           </div>
           <button class="secondary-btn" onclick="sendQuizToExam()">🚀 خوضها كاختبار رسمي</button>
         </div>
 
-        ${currentGeneratedQuiz.map((q, i) => `
-          <div class="question-box">
-            <strong>${i + 1}. ${escapeHTML(q.question).replace(/\n/g, '<br>')}</strong>
-            <div class="q-translation" id="qTrans${i}" style="display:${q.translateSource ? 'block' : 'none'}">
-              ${q.translateSource ? '🌐 جاري ترجمة العبارة الإنجليزية...' : ''}
-            </div>
-            <div class="muted" style="margin-top:6px">📌 المصدر: ${escapeHTML(q.source)}</div>
+        ${currentGeneratedQuiz.map((q, i) => {
+          const showTrans = Boolean(q.translateSource || q.aiArabicTranslation);
+          const initialTransHtml = q.aiArabicTranslation
+            ? `🌐 <strong>الترجمة العربية:</strong> ${escapeHTML(q.aiArabicTranslation)}`
+            : (q.translateSource ? '🌐 جاري ترجمة العبارة الإنجليزية...' : '');
 
-            ${q.kind === 'fill'
-              ? `<input class="form-control" style="margin-top:10px" id="fillAns${i}" placeholder="اكتب الإجابة هنا...">`
-              : q.options.map((option, j) => `
-                  <label class="option">
-                    <input type="radio" name="genQ${i}" value="${j}">
-                    ${escapeHTML(option)}
-                  </label>
-                `).join('')
-            }
-            <div id="genFeedback${i}" class="feedback"></div>
-          </div>
-        `).join('')}
+          return `
+            <div class="question-box">
+              <strong>${i + 1}. ${escapeHTML(q.question).replace(/\n/g, '<br>')}</strong>
+              <div class="q-translation" id="qTrans${i}" style="display:${showTrans ? 'block' : 'none'}">
+                ${initialTransHtml}
+              </div>
+              <div class="muted" style="margin-top:6px">📌 المصدر: ${escapeHTML(q.source)}</div>
+
+              ${q.kind === 'fill'
+                ? `<input class="form-control" style="margin-top:10px" id="fillAns${i}" placeholder="اكتب الإجابة هنا...">`
+                : q.options.map((option, j) => `
+                    <label class="option">
+                      <input type="radio" name="genQ${i}" value="${j}">
+                      ${escapeHTML(option)}
+                    </label>
+                  `).join('')
+              }
+              <div id="genFeedback${i}" class="feedback"></div>
+            </div>
+          `;
+        }).join('')}
 
         <button class="primary-btn" onclick="correctGeneratedQuiz()">تصحيح الإجابات</button>
       </div>
@@ -2175,7 +2421,7 @@ async function generateQuestionsFromMaterial() {
 
     for (let i = 0; i < currentGeneratedQuiz.length; i++) {
       const q = currentGeneratedQuiz[i];
-      if (q.translateSource) {
+      if (q.translateSource && !q.aiArabicTranslation) {
         const arTrans = await translateText(q.translateSource, 'en', 'ar');
         const transBox = document.getElementById(`qTrans${i}`);
         if (transBox) {
@@ -2187,6 +2433,8 @@ async function generateQuestionsFromMaterial() {
     }
   } catch (err) {
     alert(err.message);
+  } finally {
+    genBtn.disabled = false;
   }
 }
 
@@ -2387,7 +2635,7 @@ function speakWord(language) {
 }
 
 /* =========================================================
-   قسم التحدث عبر الصوت + الوجه التفاعلي المتزامن مع الكلمات
+   قسم التحدث عبر الصوت + الذكاء الاصطناعي + الوجه التفاعلي
    ========================================================= */
 
 const SpeechRecAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -2524,16 +2772,39 @@ function buildVoiceReplyFromMaterials(spokenText, lang) {
     : `سمعتك تقول: "${query}". يمكنك سؤالي عن أي موضوع موجود في المواد التي رفعتها إلى مكتبتك.`;
 }
 
+async function generateVoiceAIReply(transcript, lang) {
+  const contextChunks = materials
+    .slice(-2)
+    .map(m => `المادة (${m.name}): ${getMaterialContextExcerpt(m, 1400)}`)
+    .join('\n\n');
+
+  const systemPrompt = lang.startsWith('en')
+    ? 'You are Study Mate, a friendly voice study tutor. Keep answers concise, clear, and suitable for spoken voice output.'
+    : 'أنت مساعد Study Mate الصوتي الذكي للطالب. أجب بإيجاز ووضوح وبأسلوب مناسب للنطق الصوتي، واستعن بمواد الطالب إن كانت مرتبطة بسؤاله.';
+
+  const userPrompt = contextChunks
+    ? `سؤال الطالب الصوتي: "${transcript}"\n\nمواد الطالب المتوفرة:\n${contextChunks}`
+    : `سؤال الطالب الصوتي: "${transcript}"`;
+
+  const aiReply = await callAIModel(systemPrompt, userPrompt);
+  return aiReply || buildVoiceReplyFromMaterials(transcript, lang);
+}
+
 function handleSpokenQuery(transcript) {
   const lang = document.getElementById('voiceLangSelect')?.value || 'ar-SA';
   document.getElementById('userSpokenText').textContent = transcript;
-  setAvatarState('thinking', 'neutral', 'جاري التفكير والبحث...', 'التعبير الحالي: يفكّر ويحلل كلامك');
+  setAvatarState('thinking', 'neutral', 'جاري التفكير والرد بالذكاء الاصطناعي...', 'التعبير الحالي: يفكّر ويحلل كلامك');
 
-  setTimeout(() => {
-    const reply = buildVoiceReplyFromMaterials(transcript, lang);
-    document.getElementById('botSpokenReply').textContent = reply;
-    speakWithAvatar(reply, lang);
-  }, 550);
+  generateVoiceAIReply(transcript, lang)
+    .then((reply) => {
+      document.getElementById('botSpokenReply').textContent = reply;
+      speakWithAvatar(reply, lang);
+    })
+    .catch(() => {
+      const fallbackReply = buildVoiceReplyFromMaterials(transcript, lang);
+      document.getElementById('botSpokenReply').textContent = fallbackReply;
+      speakWithAvatar(fallbackReply, lang);
+    });
 }
 
 function startVoiceListening() {
@@ -2632,6 +2903,7 @@ if (savedName) {
     `مرحباً بك يا ${savedName} 👋`;
 }
 
+loadAISettingsToForm();
 renderExam();
 renderResults();
 loadMaterials();
