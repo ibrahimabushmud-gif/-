@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Study Mate | رفيق الدراسة</title>
 
-<!-- مكتبات المرحلة الثانية: قراءة PDF و Word و PowerPoint و OCR للصور -->
+<!-- مكتبات قراءة PDF و Word و PowerPoint و OCR للصور -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
@@ -634,7 +634,7 @@ button {
 }
 
 .avatar-face.state-speaking .mouth-shape {
-  animation: talkMouth 0.26s infinite alternate ease-in-out;
+  animation: talkMouth 0.25s infinite alternate ease-in-out;
 }
 
 .avatar-face.emotion-happy .mouth-shape {
@@ -679,6 +679,35 @@ button {
   padding: 15px;
   font-size: 12px;
   line-height: 1.9;
+}
+
+.chat-log-box {
+  margin-top: 14px;
+  background: #f8fafc;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px;
+  max-height: 220px;
+  overflow-y: auto;
+  font-size: 12px;
+  line-height: 1.9;
+}
+
+.chat-msg {
+  padding: 8px 12px;
+  border-radius: 10px;
+  margin-bottom: 8px;
+}
+
+.chat-msg.user {
+  background: #eaf1ff;
+  color: #172554;
+}
+
+.chat-msg.bot {
+  background: #ffffff;
+  border: 1px solid var(--border);
+  color: var(--text);
 }
 
 .empty {
@@ -1096,11 +1125,11 @@ button {
     </div>
   </section>
 
-  <!-- التحدث الصوتي مع الوجه التفاعلي -->
+  <!-- التحدث الصوتي والدردشة التفاعلية مع الوجه -->
   <section class="page" id="voice">
     <div class="page-title">
-      <h1>🎙️ التحدث عبر الصوت</h1>
-      <p>تحدث بصوتك مع مساعد Study Mate الذكي وشاهد تعابير الوجه وهي تتفاعل مع الكلمات.</p>
+      <h1>🎙️ التحدث عبر الصوت والدردشة</h1>
+      <p>تحدث بصوتك أو اكتب للدردشة الطبيعية مع Study Mate وشاهد تعابير الوجه وهي تتفاعل مع الكلمات.</p>
     </div>
 
     <div class="panel">
@@ -1137,6 +1166,15 @@ button {
         <button class="primary-btn" id="startMicBtn" onclick="startVoiceListening()">🎤 ابدأ التحدث</button>
         <button class="danger-btn" style="margin-top:15px;padding:11px 16px" id="stopMicBtn" onclick="stopVoiceListening()">⏹️ إيقاف</button>
         <button class="secondary-btn" style="margin-top:15px;padding:11px 16px" onclick="replayLastVoiceReply()">🔊 إعادة نطق الرد</button>
+        <button class="secondary-btn" style="margin-top:15px;padding:11px 16px" onclick="resetVoiceChat()">🧹 محادثة جديدة</button>
+      </div>
+
+      <div class="form-group" style="margin-top:16px">
+        <label>أو اكتب رسالة للدردشة مباشرة</label>
+        <div class="btn-row">
+          <input class="form-control" style="flex:1;min-width:200px" id="voiceTextInput" placeholder="مثال: كيف الحال؟ أو شو رأيك ندردش شوي؟" onkeydown="if(event.key==='Enter') sendTypedVoiceMessage()">
+          <button class="primary-btn" style="margin-top:0" onclick="sendTypedVoiceMessage()">إرسال</button>
+        </div>
       </div>
 
       <div class="voice-boxes">
@@ -1147,8 +1185,12 @@ button {
 
         <div class="voice-bubble bot-bubble">
           <strong>🤖 رد Study Mate:</strong>
-          <p id="botSpokenReply" class="muted" style="margin-top:6px">اضغط "ابدأ التحدث" واسأل عن أي مادة أو مفهوم أو اطلب مساعدة.</p>
+          <p id="botSpokenReply" class="muted" style="margin-top:6px">اضغط "ابدأ التحدث" أو اكتب رسالة وابدأ الدردشة بشكل طبيعي.</p>
         </div>
+      </div>
+
+      <div class="chat-log-box" id="voiceChatLog">
+        <div class="muted">سجل المحادثة سيظهر هنا أثناء الدردشة.</div>
       </div>
     </div>
   </section>
@@ -1209,24 +1251,24 @@ button {
     </div>
 
     <div class="panel">
-      <h3>🤖 إعدادات الذكاء الاصطناعي (المرحلة الثالثة)</h3>
+      <h3>🤖 إعدادات الذكاء الاصطناعي</h3>
       <p class="muted" style="margin-bottom:14px">
-        يمكنك ربط الموقع بواجهة متوافقة مع OpenAI (مثل خادم وسيط أو مزود يدعم `/v1/chat/completions`). إذا تركتها فارغة فسيعمل الموقع بالوضع المحلي الذكي تلقائياً.
+        لربط Gemini مباشرة ضع الرابط `https://generativelanguage.googleapis.com/v1beta/openai/chat/completions`، مفتاح API من Google AI Studio، واسم النموذج `gemini-2.5-flash`.
       </p>
 
       <div class="form-group">
         <label>رابط واجهة الذكاء الاصطناعي (Endpoint URL)</label>
-        <input class="form-control" id="aiEndpointUrl" placeholder="مثال: https://api.openai.com/v1/chat/completions أو رابط Worker الخاص بك">
+        <input class="form-control" id="aiEndpointUrl" placeholder="https://generativelanguage.googleapis.com/v1beta/openai/chat/completions">
       </div>
 
       <div class="form-group">
-        <label>مفتاح API (اختياري - يُحفظ محلياً على جهازك فقط)</label>
-        <input type="password" class="form-control" id="aiApiKey" placeholder="sk-... أو اتركه فارغاً إذا كان الخادم الوسيط يتولى المصادقة">
+        <label>مفتاح API (يُحفظ محلياً على جهازك فقط)</label>
+        <input type="password" class="form-control" id="aiApiKey" placeholder="AIzaSy...">
       </div>
 
       <div class="form-group">
         <label>اسم النموذج (Model)</label>
-        <input class="form-control" id="aiModelName" placeholder="مثال: gpt-4o-mini">
+        <input class="form-control" id="aiModelName" placeholder="gemini-2.5-flash">
       </div>
 
       <div class="btn-row">
@@ -1962,7 +2004,7 @@ function escapeHTML(value) {
 }
 
 /* =========================================================
-   المرحلة الثالثة: إعدادات الذكاء الاصطناعي والاتصال المرن
+   إعدادات الذكاء الاصطناعي والاتصال بـ Gemini / OpenAI-compatible
    ========================================================= */
 
 function getAISettings() {
@@ -1983,11 +2025,11 @@ function loadAISettingsToForm() {
 
   ep.value = cfg.endpoint || '';
   key.value = cfg.apiKey || '';
-  model.value = cfg.model || 'gpt-4o-mini';
+  model.value = cfg.model || 'gemini-2.5-flash';
 
   if (status) {
     status.textContent = cfg.endpoint
-      ? `مفعل حالياً: ${cfg.endpoint} (النموذج: ${cfg.model || 'gpt-4o-mini'})`
+      ? `مفعل حالياً: ${cfg.endpoint} (النموذج: ${cfg.model || 'gemini-2.5-flash'})`
       : 'الوضع الحالي: الذكاء المحلي الذكي (بدون رابط خارجي مضبوط).';
   }
 }
@@ -1995,7 +2037,7 @@ function loadAISettingsToForm() {
 function saveAISettings() {
   const endpoint = document.getElementById('aiEndpointUrl').value.trim();
   const apiKey = document.getElementById('aiApiKey').value.trim();
-  const model = (document.getElementById('aiModelName').value || '').trim() || 'gpt-4o-mini';
+  const model = (document.getElementById('aiModelName').value || '').trim() || 'gemini-2.5-flash';
 
   localStorage.setItem('studyMateAISettings', JSON.stringify({ endpoint, apiKey, model }));
   loadAISettingsToForm();
@@ -2018,12 +2060,12 @@ async function callAIModel(systemPrompt, userPrompt) {
   }
 
   const body = {
-    model: cfg.model || 'gpt-4o-mini',
+    model: cfg.model || 'gemini-2.5-flash',
     messages: [
       { role: 'system', content: systemPrompt },
       { role: 'user', content: userPrompt }
     ],
-    temperature: 0.4
+    temperature: 0.65
   };
 
   const res = await fetch(cfg.endpoint, {
@@ -2033,7 +2075,8 @@ async function callAIModel(systemPrompt, userPrompt) {
   });
 
   if (!res.ok) {
-    throw new Error(`فشل طلب الذكاء الاصطناعي (${res.status})`);
+    const errBody = await res.text().catch(() => '');
+    throw new Error(`فشل طلب الذكاء الاصطناعي (${res.status}): ${errBody.slice(0, 90)}`);
   }
 
   const data = await res.json();
@@ -2635,13 +2678,75 @@ function speakWord(language) {
 }
 
 /* =========================================================
-   قسم التحدث عبر الصوت + الذكاء الاصطناعي + الوجه التفاعلي
+   قسم التحدث عبر الصوت والدردشة الطبيعية + الوجه التفاعلي
    ========================================================= */
 
 const SpeechRecAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
 let recognitionInstance = null;
 let lastBotReplyText = '';
 let mouthSyncTimer = null;
+let isBotSpeaking = false;
+let voiceChatHistory = [];
+
+let availableVoices = [];
+if ('speechSynthesis' in window) {
+  const loadVoices = () => {
+    availableVoices = window.speechSynthesis.getVoices();
+  };
+  loadVoices();
+  window.speechSynthesis.onvoiceschanged = loadVoices;
+}
+
+function getBestNaturalVoice(lang) {
+  if (!availableVoices.length && 'speechSynthesis' in window) {
+    availableVoices = window.speechSynthesis.getVoices();
+  }
+  const isEn = lang.startsWith('en');
+  const targetPrefix = isEn ? 'en' : 'ar';
+
+  const preferred = availableVoices.find(v =>
+    v.lang.toLowerCase().startsWith(targetPrefix) &&
+    /(natural|neural|google|microsoft|sara|salma|hamed|jenny|aria)/i.test(v.name)
+  );
+  if (preferred) return preferred;
+
+  return availableVoices.find(v => v.lang.toLowerCase().startsWith(targetPrefix)) || null;
+}
+
+function cleanTextForSpeech(text) {
+  return String(text || '')
+    .replace(/[*#_`~>•\-]+/g, ' ')
+    .replace(/\[.*?\]|\(.*?\)/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function appendChatLogItem(role, text) {
+  const logBox = document.getElementById('voiceChatLog');
+  if (!logBox) return;
+
+  if (logBox.querySelector('.muted')) {
+    logBox.innerHTML = '';
+  }
+
+  const div = document.createElement('div');
+  div.className = `chat-msg ${role}`;
+  div.innerHTML = role === 'user'
+    ? `<strong>أنت:</strong> ${escapeHTML(text)}`
+    : `<strong>Study Mate:</strong> ${escapeHTML(text)}`;
+  logBox.appendChild(div);
+  logBox.scrollTop = logBox.scrollHeight;
+}
+
+function resetVoiceChat() {
+  voiceChatHistory = [];
+  lastBotReplyText = '';
+  stopVoiceListening();
+  document.getElementById('userSpokenText').textContent = 'لم يتم تسجيل صوت بعد.';
+  document.getElementById('botSpokenReply').textContent = 'بدأت محادثة جديدة! قل "مرحباً" أو اسأل عن أي موضوع.';
+  document.getElementById('voiceChatLog').innerHTML = '<div class="muted">تم بدء محادثة جديدة.</div>';
+  setAvatarState('idle', 'happy', 'جاهز للدردشة', 'التعبير الحالي: مرحّب ومتحمس');
+}
 
 function setAvatarState(state, emotion = 'neutral', statusLabel = '', emotionHint = '') {
   const avatar = document.getElementById('studyAvatar');
@@ -2660,13 +2765,13 @@ function setAvatarState(state, emotion = 'neutral', statusLabel = '', emotionHin
 
 function detectEmotionFromWords(text) {
   const t = String(text || '').toLowerCase();
-  if (/ممتاز|رائع|أحسنت|نجاح|برافو|great|awesome|good|well done|مبروك/.test(t)) {
-    return { emotion: 'happy', label: 'التعبير الحالي: مشجّع وسعيد' };
+  if (/ممتاز|رائع|أحسنت|نجاح|برافو|أهلاً|مرحباً|الحمد لله|تمام|بخير|great|awesome|good|well done|hello|hi/.test(t)) {
+    return { emotion: 'happy', label: 'التعبير الحالي: ودود ومشجّع' };
   }
-  if (/تنبيه|خطأ|انتبه|صعب|مشكلة|warning|careful|error|wrong/.test(t)) {
+  if (/تنبيه|خطأ|انتبه|صعب|مشكلة|تعذر|warning|careful|error|wrong/.test(t)) {
     return { emotion: 'alert', label: 'التعبير الحالي: منتبه وموضّح' };
   }
-  return { emotion: 'neutral', label: 'التعبير الحالي: متفاعل وواضح' };
+  return { emotion: 'neutral', label: 'التعبير الحالي: متفاعل وطبيعي' };
 }
 
 function animateMouthWithWords(text) {
@@ -2683,46 +2788,52 @@ function animateMouthWithWords(text) {
       return;
     }
     const word = words[idx];
-    const openness = Math.min(26, Math.max(8, word.length * 2.5));
+    const openness = Math.min(26, Math.max(8, word.length * 2.3));
     mouth.setAttribute('d', `M82 140 Q110 ${142 + openness} 138 140`);
     idx++;
-  }, 240);
+  }, 220);
 }
 
 function speakWithAvatar(text, lang = 'ar-SA') {
-  const clean = String(text || '').trim();
-  if (!clean) return;
-  lastBotReplyText = clean;
+  const displayClean = String(text || '').trim();
+  const speechClean = cleanTextForSpeech(displayClean);
+  if (!speechClean) return;
 
-  const { emotion, label } = detectEmotionFromWords(clean);
+  lastBotReplyText = displayClean;
+  isBotSpeaking = true;
+
+  if (recognitionInstance) {
+    try { recognitionInstance.stop(); } catch (_) {}
+  }
+
+  const { emotion, label } = detectEmotionFromWords(displayClean);
   setAvatarState('speaking', emotion, 'يتحدث الآن...', label);
-  animateMouthWithWords(clean);
+  animateMouthWithWords(speechClean);
 
   if (!('speechSynthesis' in window)) {
-    setTimeout(() => {
-      setAvatarState('idle', emotion, 'جاهز للاستماع إليك', label);
-    }, Math.min(5000, clean.length * 70));
+    isBotSpeaking = false;
+    setAvatarState('idle', emotion, 'جاهز للاستماع إليك', label);
     return;
   }
 
   window.speechSynthesis.cancel();
-  const utter = new SpeechSynthesisUtterance(clean);
+  const utter = new SpeechSynthesisUtterance(speechClean);
   utter.lang = lang;
-  utter.rate = 0.95;
 
-  utter.onboundary = (event) => {
-    if (event.name === 'word') {
-      const emo = detectEmotionFromWords(clean.slice(event.charIndex, event.charIndex + 30));
-      setAvatarState('speaking', emo.emotion, 'يتحدث الآن...', emo.label);
-    }
-  };
+  const bestVoice = getBestNaturalVoice(lang);
+  if (bestVoice) utter.voice = bestVoice;
+
+  utter.rate = lang.startsWith('en') ? 0.98 : 1.02;
+  utter.pitch = 1.03;
 
   utter.onend = () => {
+    isBotSpeaking = false;
     clearInterval(mouthSyncTimer);
     setAvatarState('idle', 'neutral', 'جاهز للاستماع إليك', 'التعبير الحالي: هادئ ومرحّب');
   };
 
   utter.onerror = () => {
+    isBotSpeaking = false;
     clearInterval(mouthSyncTimer);
     setAvatarState('idle', 'neutral', 'جاهز للاستماع إليك', 'التعبير الحالي: هادئ ومرحّب');
   };
@@ -2739,78 +2850,134 @@ function replayLastVoiceReply() {
   speakWithAvatar(lastBotReplyText, lang);
 }
 
-function buildVoiceReplyFromMaterials(spokenText, lang) {
-  const query = String(spokenText || '').trim();
-  if (!query) {
+function buildFriendlyFallbackReply(spokenText, lang) {
+  const q = String(spokenText || '').trim().toLowerCase();
+  const studentName = (localStorage.getItem('studentName') || '').trim();
+  const namePart = studentName && studentName !== 'الطالب' ? ` يا ${studentName}` : '';
+
+  if (/كيف حالك|كيفك|شو أخبارك|أخبارك|how are you|what's up/.test(q)) {
     return lang.startsWith('en')
-      ? 'I did not catch that. Please try speaking again.'
-      : 'لم أسمع بوضوح، جرّب التحدث مرة أخرى.';
+      ? 'I am doing great, thanks for asking! How are you and what are we chatting about today?'
+      : `أهلاً${namePart}! أنا تمام الحمد لله، مبسوط إني بحكي معك. إنت كيف حالك وكيف يومك؟`;
   }
 
-  const words = query.toLowerCase().split(/\s+/).filter(w => w.length >= 3);
-  for (const mat of materials) {
-    const sections = Array.isArray(mat.sections) ? mat.sections : [];
-    for (const sec of sections) {
-      const secLower = (sec.text || '').toLowerCase();
-      if (words.some(w => secLower.includes(w))) {
-        const snippet = (sec.text || '').replace(/\s+/g, ' ').trim().slice(0, 220);
-        return lang.startsWith('en')
-          ? `From your material ${mat.name} (${sec.title}): ${snippet}`
-          : `من مادتك (${mat.name} - ${sec.title}): ${snippet}`;
-      }
-    }
+  if (/مرحبا|أهلا|هلا|سلام|hello|hi|hey/.test(q)) {
+    return lang.startsWith('en')
+      ? 'Hey there! Great to chat with you. Feel free to talk about anything or ask about your study notes.'
+      : `أهلاً وسهلاً${namePart}! نورت، احكيلي شو في بالك أو شو حابب ندردش فيه اليوم؟`;
   }
 
-  if (/مرحبا|أهلا|سلام|كيف حالك|hello|hi/.test(query.toLowerCase())) {
+  if (/ندردش|دردشة|نسولف|ملل|chat|talk/.test(q)) {
     return lang.startsWith('en')
-      ? 'Hello! I am Study Mate. Ask me about your uploaded lessons or practice words.'
-      : 'أهلاً بك يا بطل! أنا مساعدك في Study Mate، اسألني عن دروسك أو موادك المرفوعة.';
+      ? 'Sure thing! We can chat about your day, ideas, projects, or anything you want.'
+      : 'أكيد يلا ندردش! فينا نحكي عن يومك، مشاريعك، أو أي موضوع يخطر ببالك، شو بتحب نبدأ فيه؟';
   }
 
   return lang.startsWith('en')
-    ? `You said: "${query}". Upload or select a study material so I can give you exact answers from your notes.`
-    : `سمعتك تقول: "${query}". يمكنك سؤالي عن أي موضوع موجود في المواد التي رفعتها إلى مكتبتك.`;
+    ? `I heard you say "${spokenText}". Add your Gemini API key in Settings so I can have full natural conversations with you.`
+    : `سمعتك بتحكي: "${spokenText}". تأكد من إضافة مفتاح Gemini في صفحة الإعدادات لحتى أرد عليك بحوار ذكي وطبيعي بكل التفاصيل.`;
 }
 
 async function generateVoiceAIReply(transcript, lang) {
+  const cfg = getAISettings();
+  if (!cfg.endpoint || !cfg.apiKey) {
+    return buildFriendlyFallbackReply(transcript, lang);
+  }
+
+  const studentName = (localStorage.getItem('studentName') || '').trim();
   const contextChunks = materials
     .slice(-2)
-    .map(m => `المادة (${m.name}): ${getMaterialContextExcerpt(m, 1400)}`)
+    .map(m => `المادة (${m.name}): ${getMaterialContextExcerpt(m, 900)}`)
     .join('\n\n');
 
   const systemPrompt = lang.startsWith('en')
-    ? 'You are Study Mate, a friendly voice study tutor. Keep answers concise, clear, and suitable for spoken voice output.'
-    : 'أنت مساعد Study Mate الصوتي الذكي للطالب. أجب بإيجاز ووضوح وبأسلوب مناسب للنطق الصوتي، واستعن بمواد الطالب إن كانت مرتبطة بسؤاله.';
+    ? `You are Study Mate, a friendly, natural, human-like conversation partner and study buddy${studentName && studentName !== 'الطالب' ? ` talking to ${studentName}` : ''}. Chat naturally like a real person: answer casual greetings and everyday chat ("how are you", small talk, ideas) warmly, and help with studies when asked. Keep replies clear, natural, and conversational in 2 to 4 sentences without markdown symbols, asterisks, or bullet points.`
+    : `أنت Study Mate، رفيق حوار ودردشة ومذاكرة ذكي وطبيعي${studentName && studentName !== 'الطالب' ? ` تتحدث مع ${studentName}` : ''}. تكلم بأسلوب عربي واضح وطبيعي ومفهوم كأنك صديق قريب تتحدث معه بصوت مسموع: رد على التحيات والدردشة العادية ("كيف حالك"، "شو أخبارك"، السوالف اليومية، الأفكار) بروح ودية طبيعية، وساعد في الدراسة عند السؤال عنها. اجعل كلامك واضحاً ومباشراً من جملتين إلى 4 جمل بدون رموز مثل النجمة أو الشباك أو القوائم النقطية لأن كلامك سيُقرأ بالصوت.`;
 
-  const userPrompt = contextChunks
-    ? `سؤال الطالب الصوتي: "${transcript}"\n\nمواد الطالب المتوفرة:\n${contextChunks}`
-    : `سؤال الطالب الصوتي: "${transcript}"`;
+  const userMessageWithContext = contextChunks
+    ? `${transcript}\n\n[ملاحظة: هذه مواد الطالب المحفوظة إن احتجت إليها فقط:\n${contextChunks}]`
+    : transcript;
 
-  const aiReply = await callAIModel(systemPrompt, userPrompt);
-  return aiReply || buildVoiceReplyFromMaterials(transcript, lang);
+  voiceChatHistory.push({ role: 'user', content: userMessageWithContext });
+  if (voiceChatHistory.length > 10) {
+    voiceChatHistory = voiceChatHistory.slice(-10);
+  }
+
+  const headers = {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${cfg.apiKey}`
+  };
+
+  const body = {
+    model: cfg.model || 'gemini-2.5-flash',
+    messages: [
+      { role: 'system', content: systemPrompt },
+      ...voiceChatHistory
+    ],
+    temperature: 0.75
+  };
+
+  const res = await fetch(cfg.endpoint, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(body)
+  });
+
+  if (!res.ok) {
+    const errText = await res.text().catch(() => '');
+    throw new Error(`تعذر الاتصال بالذكاء الاصطناعي (${res.status}). ${errText.slice(0, 80)}`);
+  }
+
+  const data = await res.json();
+  const reply = String(data?.choices?.[0]?.message?.content || '').trim();
+
+  if (reply) {
+    voiceChatHistory.push({ role: 'assistant', content: reply });
+  }
+  return reply || buildFriendlyFallbackReply(transcript, lang);
 }
 
 function handleSpokenQuery(transcript) {
-  const lang = document.getElementById('voiceLangSelect')?.value || 'ar-SA';
-  document.getElementById('userSpokenText').textContent = transcript;
-  setAvatarState('thinking', 'neutral', 'جاري التفكير والرد بالذكاء الاصطناعي...', 'التعبير الحالي: يفكّر ويحلل كلامك');
+  const cleanQuery = String(transcript || '').trim();
+  if (!cleanQuery) return;
 
-  generateVoiceAIReply(transcript, lang)
+  const lang = document.getElementById('voiceLangSelect')?.value || 'ar-SA';
+  document.getElementById('userSpokenText').textContent = cleanQuery;
+  appendChatLogItem('user', cleanQuery);
+  setAvatarState('thinking', 'neutral', 'جاري التفكير...', 'التعبير الحالي: يفكّر ويرد عليك');
+
+  generateVoiceAIReply(cleanQuery, lang)
     .then((reply) => {
       document.getElementById('botSpokenReply').textContent = reply;
+      appendChatLogItem('bot', reply);
       speakWithAvatar(reply, lang);
     })
-    .catch(() => {
-      const fallbackReply = buildVoiceReplyFromMaterials(transcript, lang);
-      document.getElementById('botSpokenReply').textContent = fallbackReply;
-      speakWithAvatar(fallbackReply, lang);
+    .catch((err) => {
+      const msg = err.message || buildFriendlyFallbackReply(cleanQuery, lang);
+      document.getElementById('botSpokenReply').textContent = msg;
+      appendChatLogItem('bot', msg);
+      speakWithAvatar(msg, lang);
     });
+}
+
+function sendTypedVoiceMessage() {
+  const input = document.getElementById('voiceTextInput');
+  if (!input) return;
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = '';
+  handleSpokenQuery(text);
 }
 
 function startVoiceListening() {
   if (!SpeechRecAPI) {
-    alert('متصفحك لا يدعم التعرف على الصوت (SpeechRecognition). جرّب Google Chrome أو Edge.');
+    alert('متصفحك لا يدعم التعرف على الصوت. استخدم Google Chrome أو Microsoft Edge.');
     return;
+  }
+
+  if (isBotSpeaking && 'speechSynthesis' in window) {
+    window.speechSynthesis.cancel();
+    isBotSpeaking = false;
   }
 
   const lang = document.getElementById('voiceLangSelect')?.value || 'ar-SA';
@@ -2835,7 +3002,7 @@ function startVoiceListening() {
   };
 
   recognitionInstance.onerror = (e) => {
-    setAvatarState('idle', 'alert', 'تعذر التقاط الصوت', 'التعبير الحالي: يرجى التأكد من الميكروفون');
+    setAvatarState('idle', 'alert', 'تعذر التقاط الصوت', 'التعبير الحالي: تأكد من الميكروفون');
     if (e.error === 'not-allowed') {
       alert('يرجى السماح للموقع باستخدام الميكروفون من إعدادات المتصفح.');
     }
@@ -2843,7 +3010,7 @@ function startVoiceListening() {
 
   recognitionInstance.onend = () => {
     const badge = document.getElementById('voiceStatusBadge');
-    if (badge && badge.textContent === 'جاري الاستماع لصوتك...') {
+    if (!isBotSpeaking && badge && badge.textContent === 'جاري الاستماع لصوتك...') {
       setAvatarState('idle', 'neutral', 'جاهز للاستماع إليك', 'التعبير الحالي: هادئ ومرحّب');
     }
   };
@@ -2852,6 +3019,7 @@ function startVoiceListening() {
 }
 
 function stopVoiceListening() {
+  isBotSpeaking = false;
   if (recognitionInstance) {
     try { recognitionInstance.stop(); } catch (_) {}
   }
