@@ -550,6 +550,15 @@ button {
   margin: 14px 0;
 }
 
+.q-translation {
+  margin-top: 8px;
+  padding: 8px 12px;
+  background: #eef2ff;
+  border-radius: 8px;
+  color: #1e3a8a;
+  font-size: 12px;
+}
+
 .option {
   display: block;
   background: white;
@@ -569,6 +578,95 @@ button {
   margin-top: 12px;
   font-size: 12px;
   font-weight: bold;
+}
+
+.btn-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+/* قسم التحدث الصوتي والوجه التفاعلي */
+.voice-stage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+  background: #f8faff;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  text-align: center;
+}
+
+.voice-status-badge {
+  margin-top: 10px;
+  background: #eaf1ff;
+  color: var(--blue);
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.avatar-face.state-listening .pulse-ring {
+  opacity: 0.85;
+  stroke: #16a34a;
+  animation: pulseRing 1.2s infinite ease-out;
+}
+
+.avatar-face.state-thinking .eye-left,
+.avatar-face.state-thinking .eye-right {
+  animation: lookSide 1.4s infinite ease-in-out;
+}
+
+.avatar-face.state-speaking .mouth-shape {
+  animation: talkMouth 0.26s infinite alternate ease-in-out;
+}
+
+.avatar-face.emotion-happy .mouth-shape {
+  d: path("M78 138 Q110 166 142 138");
+  stroke: #15803d;
+}
+
+.avatar-face.emotion-alert .brow-left {
+  d: path("M62 72 Q78 80 92 84");
+}
+
+.avatar-face.emotion-alert .brow-right {
+  d: path("M128 84 Q142 80 158 72");
+}
+
+@keyframes pulseRing {
+  0% { transform: scale(0.96); transform-origin: center; opacity: 0.8; }
+  100% { transform: scale(1.08); transform-origin: center; opacity: 0; }
+}
+
+@keyframes lookSide {
+  0%, 100% { transform: translateX(0); }
+  50% { transform: translateX(-7px); }
+}
+
+@keyframes talkMouth {
+  0% { d: path("M88 143 Q110 148 132 143"); }
+  100% { d: path("M80 138 Q110 168 140 138"); }
+}
+
+.voice-boxes {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.voice-bubble {
+  background: #f8fafc;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 15px;
+  font-size: 12px;
+  line-height: 1.9;
 }
 
 .empty {
@@ -640,7 +738,8 @@ button {
     font-size: 45px;
   }
 
-  .two-columns {
+  .two-columns,
+  .voice-boxes {
     grid-template-columns: 1fr;
   }
 }
@@ -684,6 +783,7 @@ button {
   <button class="nav-btn" data-page="create">✨ إنشاء الأسئلة</button>
   <button class="nav-btn" data-page="exam">📝 الاختبارات</button>
   <button class="nav-btn" data-page="english">🌍 تعلم الإنجليزية</button>
+  <button class="nav-btn" data-page="voice">🎙️ التحدث الصوتي</button>
   <button class="nav-btn" data-page="results">📊 نتائجي</button>
 
   <div class="menu-title">الحساب</div>
@@ -821,7 +921,7 @@ button {
   <section class="page" id="upload">
     <div class="page-title">
       <h1>📤 رفع مادة دراسية</h1>
-      <p>أضف ملف المادة ليتم قراءة نصه (بما في ذلك صفحات PDF المصورة) وتقسيمه وحفظه في مكتبتك.</p>
+      <p>أضف ملف المادة ليتم قراءة نصه وتنظيفه وتقسيمه وحفظه في مكتبتك.</p>
     </div>
 
     <div class="panel">
@@ -863,7 +963,7 @@ button {
   <section class="page" id="create">
     <div class="page-title">
       <h1>✨ إنشاء الأسئلة</h1>
-      <p>خصص الاختبار حسب المادة المختارة ومحتواها المستخرج.</p>
+      <p>خصص الاختبار حسب المادة المختارة ومحتواها مع ترجمة تلقائية للأسئلة الإنجليزية.</p>
     </div>
 
     <div class="panel">
@@ -916,7 +1016,7 @@ button {
       </button>
 
       <p class="muted" style="margin-top:12px">
-        يتم توليد الأسئلة مباشرة من النصوص المستخرجة للمادة المختارة مع ذكر مصدر كل سؤال.
+        يتم اختيار الجمل الواضحة من المادة وتوفير ترجمة عربية فورية للأسئلة الإنجليزية.
       </p>
     </div>
 
@@ -943,31 +1043,94 @@ button {
   <section class="page" id="english">
     <div class="page-title">
       <h1>🌍 تعلم الإنجليزية</h1>
-      <p>تعلم الكلمات وتدرب على النطق والاستماع.</p>
+      <p>اكتب الكلمة بالإنجليزية أو العربية ليتم ترجمتها وتنطقها صوتياً بوضوح.</p>
     </div>
 
     <div class="panel">
-      <h3>تدريب على كلمة إنجليزية</h3>
+      <h3>ترجمة ونطق الكلمات والعبارات</h3>
 
       <div class="form-group">
-        <label>اكتب الكلمة باللغة الإنجليزية</label>
-        <input class="form-control" id="englishWord" placeholder="مثال: Computer">
+        <label>الكلمة أو العبارة بالإنجليزية (English)</label>
+        <input class="form-control" id="englishWord" placeholder="مثال: Computer أو Hardware specifications">
       </div>
 
       <div class="form-group">
-        <label>معناها باللغة العربية</label>
-        <input class="form-control" id="arabicWord" placeholder="مثال: حاسوب">
+        <label>الترجمة بالعربية (العربي)</label>
+        <input class="form-control" id="arabicWord" placeholder="مثال: حاسوب أو مواصفات العتاد">
       </div>
 
-      <button class="primary-btn" onclick="speakWord('en')">🔊 استمع للإنجليزية</button>
-      <button class="primary-btn" onclick="speakWord('ar')">🔊 استمع للعربية</button>
+      <div class="btn-row">
+        <button class="primary-btn" id="translateEnToArBtn" onclick="translateField('en')">🔄 ترجمة الإنجليزية إلى العربية</button>
+        <button class="primary-btn" id="translateArToEnBtn" onclick="translateField('ar')">🔄 ترجمة العربية إلى الإنجليزية</button>
+        <button class="secondary-btn" style="margin-top:15px;padding:11px 16px" onclick="speakWord('en')">🔊 استمع للإنجليزية</button>
+        <button class="secondary-btn" style="margin-top:15px;padding:11px 16px" onclick="speakWord('ar')">🔊 استمع للعربية</button>
+      </div>
+
+      <div id="translationStatus" class="muted" style="margin-top:12px"></div>
     </div>
 
     <div class="panel">
       <h3>💡 نصيحة للتعلم</h3>
       <p class="muted">
-        حاول سماع الكلمة أكثر من مرة، ثم انطقها بنفسك واكتب معناها.
+        اكتب الكلمة الإنجليزية واضغط "ترجمة الإنجليزية إلى العربية" لتظهر الترجمة تلقائياً، أو اكتب بالعربية وحوّلها للإنجليزية مع الاستماع للنطق.
       </p>
+    </div>
+  </section>
+
+  <!-- التحدث الصوتي مع الوجه التفاعلي -->
+  <section class="page" id="voice">
+    <div class="page-title">
+      <h1>🎙️ التحدث عبر الصوت</h1>
+      <p>تحدث بصوتك مع مساعد Study Mate وشاهد تعابير الوجه وهي تتفاعل مع الكلمات.</p>
+    </div>
+
+    <div class="panel">
+      <div class="voice-stage">
+        <div class="avatar-face state-idle" id="studyAvatar">
+          <svg viewBox="0 0 220 220" width="180" height="180" aria-label="وجه المساعد الدراسي">
+            <circle class="pulse-ring" cx="110" cy="110" r="98" fill="none" stroke="#2563eb" stroke-width="3" opacity="0.25" />
+            <circle cx="110" cy="110" r="82" fill="#eef4ff" stroke="#2563eb" stroke-width="4" />
+            <path class="brow-left" d="M62 78 Q78 68 92 76" fill="none" stroke="#172554" stroke-width="4" stroke-linecap="round" />
+            <path class="brow-right" d="M128 76 Q142 68 158 78" fill="none" stroke="#172554" stroke-width="4" stroke-linecap="round" />
+            <ellipse class="eye-left" cx="78" cy="96" rx="9" ry="11" fill="#172554" />
+            <ellipse class="eye-right" cx="142" cy="96" rx="9" ry="11" fill="#172554" />
+            <circle cx="81" cy="92" r="3" fill="#ffffff" />
+            <circle cx="145" cy="92" r="3" fill="#ffffff" />
+            <circle cx="58" cy="118" r="9" fill="#f9a8d4" opacity="0.45" />
+            <circle cx="162" cy="118" r="9" fill="#f9a8d4" opacity="0.45" />
+            <path class="mouth-shape" id="avatarMouth" d="M82 142 Q110 158 138 142" fill="none" stroke="#172554" stroke-width="5" stroke-linecap="round" />
+          </svg>
+        </div>
+
+        <div class="voice-status-badge" id="voiceStatusBadge">جاهز للاستماع إليك</div>
+        <div class="muted" id="spokenEmotionHint">التعبير الحالي: هادئ ومرحّب</div>
+      </div>
+
+      <div class="form-group" style="margin-top:16px">
+        <label>لغة التحدث والرد</label>
+        <select class="form-control" id="voiceLangSelect">
+          <option value="ar-SA" selected>العربية (ar-SA)</option>
+          <option value="en-US">الإنجليزية (en-US)</option>
+        </select>
+      </div>
+
+      <div class="btn-row">
+        <button class="primary-btn" id="startMicBtn" onclick="startVoiceListening()">🎤 ابدأ التحدث</button>
+        <button class="danger-btn" style="margin-top:15px;padding:11px 16px" id="stopMicBtn" onclick="stopVoiceListening()">⏹️ إيقاف</button>
+        <button class="secondary-btn" style="margin-top:15px;padding:11px 16px" onclick="replayLastVoiceReply()">🔊 إعادة نطق الرد</button>
+      </div>
+
+      <div class="voice-boxes">
+        <div class="voice-bubble user-bubble">
+          <strong>🗣️ ما قلته أنت:</strong>
+          <p id="userSpokenText" class="muted" style="margin-top:6px">لم يتم تسجيل صوت بعد.</p>
+        </div>
+
+        <div class="voice-bubble bot-bubble">
+          <strong>🤖 رد Study Mate:</strong>
+          <p id="botSpokenReply" class="muted" style="margin-top:6px">اضغط "ابدأ التحدث" واسأل عن أي مادة أو مفهوم أو اطلب مساعدة.</p>
+        </div>
+      </div>
     </div>
   </section>
 
@@ -1185,15 +1348,30 @@ async function loadMaterials() {
 }
 
 /* =========================================================
-   تنظيف النص، تقدير اللغة، استخراج العناوين، وتقسيم الملفات الكبيرة
+   تنظيف النص وتحسين قراءة PDF والصور
    ========================================================= */
 
+function isGarbledLine(line) {
+  const tokens = line.split(/\s+/).filter(Boolean);
+  if (!tokens.length) return true;
+
+  const singleCharTokens = tokens.filter(t => t.length === 1 && !/^[A-Za-z0-9]$/.test(t)).length;
+  const weirdSymbols = (line.match(/[®©™|§•·■□◆◇★☆~^`\\]/g) || []).length;
+
+  if (weirdSymbols >= 2) return true;
+  if (tokens.length >= 3 && singleCharTokens / tokens.length > 0.45) return true;
+  return false;
+}
+
 function cleanText(raw) {
-  return String(raw || '')
+  const lines = String(raw || '')
     .replace(/\r\n/g, '\n')
-    .replace(/[ \t]+/g, ' ')
-    .replace(/\n{3,}/g, '\n\n')
-    .trim();
+    .replace(/[®©™|§•·■□◆◇★☆~^`\\]/g, ' ')
+    .split('\n')
+    .map(l => l.replace(/[ \t]+/g, ' ').trim())
+    .filter(l => l && !isGarbledLine(l));
+
+  return lines.join('\n').replace(/\n{3,}/g, '\n\n').trim();
 }
 
 function detectLanguage(text) {
@@ -1218,15 +1396,15 @@ function extractHeadings(sections) {
     for (const line of lines) {
       const isHeadingPattern =
         /^(الفصل|الوحدة|الباب|الدرس|مقدمة|خاتمة|Chapter|Unit|Section|Lesson)\b/i.test(line) ||
-        (line.length >= 4 && line.length <= 75 && !/[.،؛:!؟?]$/.test(line) && line.split(' ').length <= 9);
+        (line.length >= 5 && line.length <= 70 && !/[.،؛:!؟?]$/.test(line) && line.split(' ').length >= 2 && line.split(' ').length <= 8);
 
       if (isHeadingPattern && !seen.has(line)) {
         seen.add(line);
         headings.push(`${line} (${sec.title})`);
       }
-      if (headings.length >= 25) break;
+      if (headings.length >= 20) break;
     }
-    if (headings.length >= 25) break;
+    if (headings.length >= 20) break;
   }
 
   return headings;
@@ -1263,6 +1441,30 @@ function splitLargeSections(sections, maxCharsPerSection = 12000) {
   return result;
 }
 
+function extractPageTextOrdered(textContent) {
+  const items = (textContent.items || []).filter(it => it.str && it.str.trim());
+  if (!items.length) return '';
+
+  const rows = [];
+  for (const it of items) {
+    const x = it.transform ? it.transform[4] : 0;
+    const y = it.transform ? it.transform[5] : 0;
+    let row = rows.find(r => Math.abs(r.y - y) < 6);
+    if (!row) {
+      row = { y, items: [] };
+      rows.push(row);
+    }
+    row.items.push({ x, str: it.str.trim() });
+  }
+
+  rows.sort((a, b) => b.y - a.y);
+
+  return rows.map(row => {
+    row.items.sort((a, b) => a.x - b.x);
+    return row.items.map(i => i.str).join(' ');
+  }).join('\n');
+}
+
 /* =========================================================
    قراءة ملفات PDF (مع OCR للصور) و Word (.docx) و PowerPoint (.pptx)
    ========================================================= */
@@ -1295,11 +1497,11 @@ async function extractPDF(file) {
 
     const page = await pdf.getPage(pageNum);
     const content = await page.getTextContent();
-    let pageText = cleanText(content.items.map(item => item.str).join(' '));
+    let pageText = cleanText(extractPageTextOrdered(content));
 
-    if (!pageText && window.Tesseract) {
+    if (pageText.length < 25 && window.Tesseract) {
       setUploadProgress(percent, `الصفحة ${pageNum} تبدو صورة؛ جاري التعرف على النص (OCR)...`);
-      const viewport = page.getViewport({ scale: 1.5 });
+      const viewport = page.getViewport({ scale: 2 });
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
       canvas.width = viewport.width;
@@ -1307,7 +1509,10 @@ async function extractPDF(file) {
 
       await page.render({ canvasContext: ctx, viewport }).promise;
       const ocrRes = await Tesseract.recognize(canvas, 'ara+eng');
-      pageText = cleanText(ocrRes?.data?.text || '');
+      const ocrText = cleanText(ocrRes?.data?.text || '');
+      if (ocrText.length > pageText.length) {
+        pageText = ocrText;
+      }
     }
 
     if (pageText) {
@@ -1475,7 +1680,7 @@ async function saveMaterial() {
   try {
     const { ext, rawSections } = await parseStudyFile(file);
 
-    setUploadProgress(82, 'جاري تقسيم المحتوى واستخراج العناوين...');
+    setUploadProgress(82, 'جاري تنظيف وتقسيم المحتوى واستخراج العناوين...');
     const sections = splitLargeSections(rawSections);
     const headings = extractHeadings(sections);
     const fullText = sections.map(s => `--- ${s.title} ---\n${s.text}`).join('\n\n');
@@ -1711,7 +1916,33 @@ function escapeHTML(value) {
 }
 
 /* =========================================================
-   توليد الأسئلة الحقيقية من محتوى المادة المرفوعة
+   خدمة الترجمة (إنجليزي ↔ عربي)
+   ========================================================= */
+
+async function translateText(text, fromLang, toLang) {
+  const clean = String(text || '').trim();
+  if (!clean) return '';
+
+  try {
+    const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(clean.slice(0, 450))}&langpair=${fromLang}|${toLang}`;
+    const res = await fetch(url);
+    const data = await res.json();
+    const translated = data?.responseData?.translatedText || '';
+    if (translated && !/MYMEMORY WARNING/i.test(translated)) {
+      return translated.trim();
+    }
+  } catch (e) {
+    console.warn('تعذر الاتصال بخدمة الترجمة:', e);
+  }
+  return '';
+}
+
+function hasEnglishLetters(str) {
+  return /[A-Za-z]{2,}/.test(str || '');
+}
+
+/* =========================================================
+   توليد الأسئلة الواضحة مع ترجمة عربية للأسئلة الإنجليزية
    ========================================================= */
 
 let currentGeneratedQuiz = [];
@@ -1724,7 +1955,7 @@ const STOP_WORDS = new Set([
   'غير', 'مثل', 'خلال', 'عبر', 'نحو', 'ضد', 'تحت', 'فوق', 'أمام', 'وراء', 'قد', 'لقد',
   'the', 'and', 'for', 'are', 'but', 'not', 'you', 'all', 'can', 'had', 'her', 'was',
   'one', 'our', 'out', 'has', 'have', 'been', 'were', 'they', 'their', 'this', 'that',
-  'with', 'from', 'into', 'which', 'when', 'where', 'what', 'will', 'would', 'there'
+  'with', 'from', 'into', 'which', 'when', 'where', 'what', 'will', 'would', 'there', 'page'
 ]);
 
 function shuffleArray(arr) {
@@ -1734,6 +1965,15 @@ function shuffleArray(arr) {
     [copy[i], copy[j]] = [copy[j], copy[i]];
   }
   return copy;
+}
+
+function isCleanStudySentence(s) {
+  if (!s || s.length < 22 || s.length > 210) return false;
+  if (isGarbledLine(s)) return false;
+  const words = s.split(/\s+/);
+  if (words.length < 4) return false;
+  const validWords = words.filter(w => /[A-Za-z\u0600-\u06FF]{2,}/.test(w));
+  return validWords.length >= Math.ceil(words.length * 0.7);
 }
 
 function extractSentencesWithSource(material) {
@@ -1746,7 +1986,7 @@ function extractSentencesWithSource(material) {
     const rawSentences = (sec.text || '')
       .split(/[.!؟?\n]+/)
       .map(s => s.replace(/\s+/g, ' ').trim())
-      .filter(s => s.length >= 25 && s.length <= 260 && s.split(' ').length >= 5);
+      .filter(isCleanStudySentence);
 
     for (const sentence of rawSentences) {
       items.push({ sentence, source: sec.title });
@@ -1759,7 +1999,12 @@ function pickKeywordFromSentence(sentence, difficulty) {
   const words = sentence
     .replace(/[،؛:"'()\[\]{}«»\-–—/\\]/g, ' ')
     .split(/\s+/)
-    .filter(w => w.length >= 4 && !/^\d+$/.test(w) && !STOP_WORDS.has(w.toLowerCase()));
+    .filter(w =>
+      w.length >= 3 &&
+      !/^\d+$/.test(w) &&
+      /[A-Za-z\u0600-\u06FF]{3,}/.test(w) &&
+      !STOP_WORDS.has(w.toLowerCase())
+    );
 
   if (!words.length) return null;
 
@@ -1776,7 +2021,7 @@ function pickKeywordFromSentence(sentence, difficulty) {
 function buildQuestionsFromMaterial(material, type, difficulty, count) {
   const sentenceItems = extractSentencesWithSource(material);
   if (sentenceItems.length < 2) {
-    throw new Error('النص المستخرج من هذه المادة قصير جداً ولا يكفي لتوليد أسئلة.');
+    throw new Error('النص المستخرج من هذه المادة قصير أو غير واضح بما يكفي لتوليد أسئلة مفهومة.');
   }
 
   const keywordPool = [];
@@ -1792,7 +2037,7 @@ function buildQuestionsFromMaterial(material, type, difficulty, count) {
 
   const uniqueKeywords = [...new Set(keywordPool)];
   if (candidates.length < 1 || uniqueKeywords.length < 2) {
-    throw new Error('لم يتم العثور على جمل ومصطلحات كافية في هذا الملف.');
+    throw new Error('لم يتم العثور على مصطلحات واضحة كافية في هذا الملف.');
   }
 
   const selected = shuffleArray(candidates).slice(0, count);
@@ -1805,23 +2050,31 @@ function buildQuestionsFromMaterial(material, type, difficulty, count) {
       qType = modes[index % modes.length];
     }
 
+    const isEnglishPrompt = hasEnglishLetters(item.sentence);
+
     if (qType === 'صح أو خطأ') {
       const makeFalse = Math.random() < 0.5 && uniqueKeywords.length >= 2;
       if (!makeFalse) {
         questions.push({
           kind: 'tf',
-          question: `هل العبارة التالية صحيحة وفقاً للمادة؟\n"${item.sentence}"`,
+          question: isEnglishPrompt
+            ? `True or False according to the material:\n"${item.sentence}"`
+            : `هل العبارة التالية صحيحة وفقاً للمادة؟\n"${item.sentence}"`,
+          translateSource: isEnglishPrompt ? item.sentence : '',
           options: ['صح', 'خطأ'],
           answer: 0,
           source: item.source,
-          explanation: `العبارة صحيحة ومذكورة في (${item.source}).`
+          explanation: `العبارة صحيحة كما وردت في (${item.source}).`
         });
       } else {
         const fakeWord = shuffleArray(uniqueKeywords.filter(w => w !== item.keyword))[0];
         const alteredSentence = item.sentence.replace(item.keyword, fakeWord);
         questions.push({
           kind: 'tf',
-          question: `هل العبارة التالية صحيحة وفقاً للمادة؟\n"${alteredSentence}"`,
+          question: isEnglishPrompt
+            ? `True or False according to the material:\n"${alteredSentence}"`
+            : `هل العبارة التالية صحيحة وفقاً للمادة؟\n"${alteredSentence}"`,
+          translateSource: isEnglishPrompt ? alteredSentence : '',
           options: ['صح', 'خطأ'],
           answer: 1,
           source: item.source,
@@ -1832,7 +2085,10 @@ function buildQuestionsFromMaterial(material, type, difficulty, count) {
       const blanked = item.sentence.replace(item.keyword, '________');
       questions.push({
         kind: 'fill',
-        question: `أكمل الفراغ بالكلمة المناسبة:\n"${blanked}"`,
+        question: isEnglishPrompt
+          ? `Complete the missing word:\n"${blanked}"`
+          : `أكمل الفراغ بالكلمة المناسبة:\n"${blanked}"`,
+        translateSource: isEnglishPrompt ? item.sentence : '',
         correctText: item.keyword,
         source: item.source,
         explanation: `الإجابة الصحيحة هي: "${item.keyword}" (${item.source}).`
@@ -1848,7 +2104,10 @@ function buildQuestionsFromMaterial(material, type, difficulty, count) {
 
       questions.push({
         kind: 'mcq',
-        question: `اختر المصطلح أو الكلمة المناسبة لإكمال العبارة:\n"${blanked}"`,
+        question: isEnglishPrompt
+          ? `Choose the correct word to complete the sentence:\n"${blanked}"`
+          : `اختر المصطلح أو الكلمة المناسبة لإكمال العبارة:\n"${blanked}"`,
+        translateSource: isEnglishPrompt ? item.sentence : '',
         options,
         answer: answerIndex,
         source: item.source,
@@ -1860,7 +2119,7 @@ function buildQuestionsFromMaterial(material, type, difficulty, count) {
   return questions;
 }
 
-function generateQuestionsFromMaterial() {
+async function generateQuestionsFromMaterial() {
   const subjectId = Number(document.getElementById('questionSubject').value);
   const type = document.getElementById('questionType').value;
   const difficulty = document.getElementById('difficulty').value;
@@ -1890,235 +2149,4 @@ function generateQuestionsFromMaterial() {
         ${currentGeneratedQuiz.map((q, i) => `
           <div class="question-box">
             <strong>${i + 1}. ${escapeHTML(q.question).replace(/\n/g, '<br>')}</strong>
-            <div class="muted" style="margin-top:4px">📌 المصدر: ${escapeHTML(q.source)}</div>
-
-            ${q.kind === 'fill'
-              ? `<input class="form-control" style="margin-top:10px" id="fillAns${i}" placeholder="اكتب الإجابة هنا...">`
-              : q.options.map((option, j) => `
-                  <label class="option">
-                    <input type="radio" name="genQ${i}" value="${j}">
-                    ${escapeHTML(option)}
-                  </label>
-                `).join('')
-            }
-            <div id="genFeedback${i}" class="feedback"></div>
-          </div>
-        `).join('')}
-
-        <button class="primary-btn" onclick="correctGeneratedQuiz()">تصحيح الإجابات</button>
-      </div>
-    `;
-
-    container.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  } catch (err) {
-    alert(err.message);
-  }
-}
-
-function correctGeneratedQuiz() {
-  if (!currentGeneratedQuiz.length) return;
-  let score = 0;
-
-  currentGeneratedQuiz.forEach((q, i) => {
-    const feedback = document.getElementById(`genFeedback${i}`);
-
-    if (q.kind === 'fill') {
-      const userVal = (document.getElementById(`fillAns${i}`)?.value || '').trim();
-      const isMatch = userVal && userVal.toLowerCase() === q.correctText.toLowerCase();
-      if (isMatch) {
-        score++;
-        feedback.innerHTML = `✅ إجابة صحيحة! ${escapeHTML(q.explanation)}`;
-        feedback.style.color = 'green';
-      } else {
-        feedback.innerHTML = `❌ ${escapeHTML(q.explanation)}`;
-        feedback.style.color = '#d04444';
-      }
-    } else {
-      const selected = document.querySelector(`input[name="genQ${i}"]:checked`);
-      if (selected && Number(selected.value) === q.answer) {
-        score++;
-        feedback.innerHTML = `✅ إجابة صحيحة. ${escapeHTML(q.explanation)}`;
-        feedback.style.color = 'green';
-      } else {
-        feedback.innerHTML = `❌ ${escapeHTML(q.explanation)}`;
-        feedback.style.color = '#d04444';
-      }
-    }
-  });
-
-  const percent = Math.round((score / currentGeneratedQuiz.length) * 100);
-  alert(`نتيجتك: ${score} من ${currentGeneratedQuiz.length} (${percent}%)`);
-}
-
-function sendQuizToExam() {
-  const mcqOrTf = currentGeneratedQuiz.filter(q => q.kind !== 'fill');
-  if (!mcqOrTf.length) {
-    alert('صفحة الاختبارات تدعم حالياً أسئلة الاختيار من متعدد وصح أو خطأ.');
-    return;
-  }
-  examQuestions = mcqOrTf;
-  document.getElementById('examTitle').textContent = `اختبار في: ${activeQuizSubjectName}`;
-  renderExam();
-  document.getElementById('examResult').textContent = '';
-  showPage('exam');
-}
-
-/* =========================================================
-   الاختبار والنتائج
-   ========================================================= */
-
-let examQuestions = [];
-
-function renderExam() {
-  const container = document.getElementById('examQuestions');
-
-  if (!examQuestions.length) {
-    container.innerHTML = `
-      <div class="empty">
-        لا يوجد اختبار جاهز حالياً. اذهب إلى <strong>إنشاء الأسئلة</strong> وولّد أسئلة من مادتك ثم اضغط "خوضها كاختبار رسمي".
-      </div>
-    `;
-    return;
-  }
-
-  container.innerHTML = examQuestions.map((q, i) => `
-    <div class="question-box">
-      <strong>${i + 1}. ${escapeHTML(q.question).replace(/\n/g, '<br>')}</strong>
-      ${q.options.map((option, j) => `
-        <label class="option">
-          <input type="radio" name="exam${i}" value="${j}">
-          ${escapeHTML(option)}
-        </label>
-      `).join('')}
-    </div>
-  `).join('');
-}
-
-let examResults = JSON.parse(localStorage.getItem('studyResults') || '[]');
-
-function correctExam() {
-  if (!examQuestions.length) {
-    alert('يرجى إنشاء اختبار من مادة أولاً.');
-    return;
-  }
-
-  let correct = 0;
-
-  examQuestions.forEach((q, i) => {
-    const selected = document.querySelector(`input[name="exam${i}"]:checked`);
-
-    if (selected && Number(selected.value) === q.answer) {
-      correct++;
-    }
-  });
-
-  const wrong = examQuestions.length - correct;
-  const score = Math.round((correct / examQuestions.length) * 100);
-
-  const result = {
-    subject: activeQuizSubjectName,
-    correct,
-    wrong,
-    score,
-    date: new Date().toLocaleDateString('ar')
-  };
-
-  examResults.push(result);
-  localStorage.setItem('studyResults', JSON.stringify(examResults));
-
-  document.getElementById('examResult').innerHTML =
-    `نتيجتك: ${score}% - الصحيحة: ${correct} - الخاطئة: ${wrong}`;
-
-  renderResults();
-}
-
-function renderResults() {
-  const totalCorrect = examResults.reduce((sum, item) => sum + item.correct, 0);
-  const totalWrong = examResults.reduce((sum, item) => sum + item.wrong, 0);
-  const last = examResults[examResults.length - 1];
-
-  document.getElementById('totalExams').textContent = examResults.length;
-  document.getElementById('totalCorrect').textContent = totalCorrect;
-  document.getElementById('totalWrong').textContent = totalWrong;
-  document.getElementById('lastScore').textContent = last ? last.score + '%' : '0%';
-
-  document.getElementById('lastResult').textContent = last
-    ? `آخر نتيجة (${last.subject || 'اختبار'}): ${last.score}% بتاريخ ${last.date}`
-    : 'لم تؤدِّ أي اختبار حتى الآن.';
-}
-
-/* الاستماع للكلمات */
-
-function speakWord(language) {
-  const word = document.getElementById('englishWord').value.trim();
-  const translation = document.getElementById('arabicWord').value.trim();
-
-  const text = language === 'en' ? word : translation;
-
-  if (!text) {
-    alert('يرجى كتابة الكلمة أولاً.');
-    return;
-  }
-
-  if (!('speechSynthesis' in window)) {
-    alert('المتصفح لا يدعم خاصية الاستماع.');
-    return;
-  }
-
-  const speech = new SpeechSynthesisUtterance(text);
-  speech.lang = language === 'en' ? 'en-US' : 'ar';
-  speech.rate = 0.85;
-
-  window.speechSynthesis.cancel();
-  window.speechSynthesis.speak(speech);
-}
-
-/* الإعدادات */
-
-function saveSettings() {
-  const name = document.getElementById('studentName').value.trim();
-
-  if (!name) {
-    alert('يرجى كتابة الاسم.');
-    return;
-  }
-
-  localStorage.setItem('studentName', name);
-  document.querySelector('.welcome h2').textContent = `مرحباً بك يا ${name} 👋`;
-
-  alert('تم حفظ الاسم على هذا الجهاز.');
-}
-
-/* البحث البسيط */
-
-document.getElementById('searchInput').addEventListener('input', function() {
-  const value = this.value.trim().toLowerCase();
-
-  if (!value) return;
-
-  const match = materials.find(item =>
-    item.name.toLowerCase().includes(value) ||
-    (item.fullText && item.fullText.toLowerCase().includes(value))
-  );
-
-  if (match) showPage('library');
-});
-
-/* تشغيل الموقع عند فتحه */
-
-const savedName = localStorage.getItem('studentName');
-
-if (savedName) {
-  document.getElementById('studentName').value = savedName;
-  document.querySelector('.welcome h2').textContent =
-    `مرحباً بك يا ${savedName} 👋`;
-}
-
-renderExam();
-renderResults();
-loadMaterials();
-
-</script>
-
-</body>
-</html>
+            <div class="q-translation" id="qTrans${i}"
