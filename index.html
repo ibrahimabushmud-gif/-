@@ -863,7 +863,7 @@ button {
   <section class="page" id="create">
     <div class="page-title">
       <h1>✨ إنشاء الأسئلة</h1>
-      <p>خصص الاختبار حسب احتياجاتك الدراسية.</p>
+      <p>خصص الاختبار حسب المادة المختارة ومحتواها المستخرج.</p>
     </div>
 
     <div class="panel">
@@ -911,12 +911,12 @@ button {
         </select>
       </div>
 
-      <button class="primary-btn" onclick="generateDemo()">
-        إنشاء تدريب تجريبي
+      <button class="primary-btn" onclick="generateQuestionsFromMaterial()">
+        ✨ إنشاء الأسئلة من المادة
       </button>
 
       <p class="muted" style="margin-top:12px">
-        ملاحظة: إنشاء الأسئلة هنا تجريبي حالياً، وسيتم ربط الذكاء الاصطناعي لاحقاً.
+        يتم توليد الأسئلة مباشرة من النصوص المستخرجة للمادة المختارة مع ذكر مصدر كل سؤال.
       </p>
     </div>
 
@@ -927,11 +927,11 @@ button {
   <section class="page" id="exam">
     <div class="page-title">
       <h1>📝 الاختبارات</h1>
-      <p>اختبر معلوماتك من خلال تدريب تجريبي.</p>
+      <p>اختبر معلوماتك واعتمد نتيجتك في سجل نتائجك.</p>
     </div>
 
     <div class="panel">
-      <h3>اختبار تجريبي في أساسيات البرمجة</h3>
+      <h3 id="examTitle">اختبار في المادة المختارة</h3>
       <p class="muted">اختر الإجابة الصحيحة ثم اضغط على التصحيح.</p>
       <div id="examQuestions"></div>
       <button class="primary-btn" onclick="correctExam()">تصحيح الإجابات</button>
@@ -1232,7 +1232,6 @@ function extractHeadings(sections) {
   return headings;
 }
 
-/* تقسيم النصوص الطويلة جداً إلى أجزاء متوسطة ليسهل التعامل معها */
 function splitLargeSections(sections, maxCharsPerSection = 12000) {
   const result = [];
 
@@ -1298,7 +1297,6 @@ async function extractPDF(file) {
     const content = await page.getTextContent();
     let pageText = cleanText(content.items.map(item => item.str).join(' '));
 
-    // إذا كانت الصفحة صورة بدون نص قابل للنسخ، جرّب OCR عبر Tesseract.js
     if (!pageText && window.Tesseract) {
       setUploadProgress(percent, `الصفحة ${pageNum} تبدو صورة؛ جاري التعرف على النص (OCR)...`);
       const viewport = page.getViewport({ scale: 1.5 });
@@ -1696,7 +1694,7 @@ function updateSubjectOptions() {
   }
 
   select.innerHTML = materials.map(item =>
-    `<option>${escapeHTML(item.name)}</option>`
+    `<option value="${item.id}">${escapeHTML(item.name)} (${escapeHTML(item.file)})</option>`
   ).join('');
 }
 
@@ -1712,89 +1710,284 @@ function escapeHTML(value) {
   })[char]);
 }
 
-/* أسئلة تجريبية */
+/* =========================================================
+   توليد الأسئلة الحقيقية من محتوى المادة المرفوعة
+   ========================================================= */
 
-const demoQuestions = [
-  {
-    question: 'ما نوع البيانات المستخدم لتخزين الأعداد الصحيحة في C#؟',
-    options: ['string', 'int', 'bool', 'char'],
-    answer: 1,
-    explanation: 'int يستخدم لتخزين الأعداد الصحيحة.'
-  },
-  {
-    question: 'أي أمر يستخدم لطباعة نص على الشاشة في C#؟',
-    options: ['Console.WriteLine()', 'Console.ReadLine()', 'int.Parse()', 'while'],
-    answer: 0,
-    explanation: 'Console.WriteLine() يستخدم لطباعة النصوص.'
-  },
-  {
-    question: 'ما وظيفة حلقة for؟',
-    options: ['تعريف متغير فقط', 'تكرار الأوامر', 'حذف البرنامج', 'إيقاف الحاسوب'],
-    answer: 1,
-    explanation: 'حلقة for تستخدم لتكرار مجموعة من الأوامر.'
+let currentGeneratedQuiz = [];
+let activeQuizSubjectName = 'اختبار تدريبي';
+
+const STOP_WORDS = new Set([
+  'في', 'من', 'إلى', 'على', 'عن', 'مع', 'هذا', 'هذه', 'ذلك', 'تلك', 'التي', 'الذي',
+  'الذين', 'أن', 'إن', 'كان', 'كانت', 'يكون', 'تكون', 'هو', 'هي', 'هم', 'نحن', 'أنت',
+  'كما', 'حيث', 'بين', 'عند', 'بعد', 'قبل', 'أو', 'ثم', 'لكن', 'بل', 'حتى', 'كل', 'بعض',
+  'غير', 'مثل', 'خلال', 'عبر', 'نحو', 'ضد', 'تحت', 'فوق', 'أمام', 'وراء', 'قد', 'لقد',
+  'the', 'and', 'for', 'are', 'but', 'not', 'you', 'all', 'can', 'had', 'her', 'was',
+  'one', 'our', 'out', 'has', 'have', 'been', 'were', 'they', 'their', 'this', 'that',
+  'with', 'from', 'into', 'which', 'when', 'where', 'what', 'will', 'would', 'there'
+]);
+
+function shuffleArray(arr) {
+  const copy = [...arr];
+  for (let i = copy.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
   }
-];
-
-function generateDemo() {
-  const container = document.getElementById('generatedQuestions');
-
-  container.innerHTML = `
-    <div class="panel">
-      <h3>تدريب تجريبي</h3>
-      <p class="muted">
-        هذه أسئلة نموذجية للتجربة وليست مستخرجة من ملفك.
-      </p>
-      ${demoQuestions.map((q, i) => `
-        <div class="question-box">
-          <strong>${i + 1}. ${q.question}</strong>
-          ${q.options.map((option, j) => `
-            <label class="option">
-              <input type="radio" name="demo${i}" value="${j}">
-              ${option}
-            </label>
-          `).join('')}
-          <div id="demoFeedback${i}" class="feedback"></div>
-        </div>
-      `).join('')}
-      <button class="primary-btn" onclick="correctDemo()">تصحيح التدريب</button>
-    </div>
-  `;
+  return copy;
 }
 
-function correctDemo() {
-  let score = 0;
+function extractSentencesWithSource(material) {
+  const sections = Array.isArray(material.sections) && material.sections.length
+    ? material.sections
+    : [{ title: 'المادة', text: material.fullText || '' }];
 
-  demoQuestions.forEach((q, i) => {
-    const selected = document.querySelector(`input[name="demo${i}"]:checked`);
-    const feedback = document.getElementById(`demoFeedback${i}`);
+  const items = [];
+  for (const sec of sections) {
+    const rawSentences = (sec.text || '')
+      .split(/[.!؟?\n]+/)
+      .map(s => s.replace(/\s+/g, ' ').trim())
+      .filter(s => s.length >= 25 && s.length <= 260 && s.split(' ').length >= 5);
 
-    if (selected && Number(selected.value) === q.answer) {
-      score++;
-      feedback.innerHTML = `✅ إجابة صحيحة. ${q.explanation}`;
-      feedback.style.color = 'green';
+    for (const sentence of rawSentences) {
+      items.push({ sentence, source: sec.title });
+    }
+  }
+  return items;
+}
+
+function pickKeywordFromSentence(sentence, difficulty) {
+  const words = sentence
+    .replace(/[،؛:"'()\[\]{}«»\-–—/\\]/g, ' ')
+    .split(/\s+/)
+    .filter(w => w.length >= 4 && !/^\d+$/.test(w) && !STOP_WORDS.has(w.toLowerCase()));
+
+  if (!words.length) return null;
+
+  const sorted = [...new Set(words)].sort((a, b) => b.length - a.length);
+  if (difficulty === 'سهل') {
+    return sorted[Math.min(sorted.length - 1, Math.floor(sorted.length / 2))];
+  }
+  if (difficulty === 'صعب') {
+    return sorted[0];
+  }
+  return sorted[Math.min(sorted.length - 1, 1)];
+}
+
+function buildQuestionsFromMaterial(material, type, difficulty, count) {
+  const sentenceItems = extractSentencesWithSource(material);
+  if (sentenceItems.length < 2) {
+    throw new Error('النص المستخرج من هذه المادة قصير جداً ولا يكفي لتوليد أسئلة.');
+  }
+
+  const keywordPool = [];
+  const candidates = [];
+
+  for (const item of sentenceItems) {
+    const kw = pickKeywordFromSentence(item.sentence, difficulty);
+    if (kw) {
+      keywordPool.push(kw);
+      candidates.push({ ...item, keyword: kw });
+    }
+  }
+
+  const uniqueKeywords = [...new Set(keywordPool)];
+  if (candidates.length < 1 || uniqueKeywords.length < 2) {
+    throw new Error('لم يتم العثور على جمل ومصطلحات كافية في هذا الملف.');
+  }
+
+  const selected = shuffleArray(candidates).slice(0, count);
+  const questions = [];
+
+  selected.forEach((item, index) => {
+    let qType = type;
+    if (type === 'أسئلة متنوعة') {
+      const modes = ['اختر من متعدد', 'صح أو خطأ', 'أكمل الفراغ'];
+      qType = modes[index % modes.length];
+    }
+
+    if (qType === 'صح أو خطأ') {
+      const makeFalse = Math.random() < 0.5 && uniqueKeywords.length >= 2;
+      if (!makeFalse) {
+        questions.push({
+          kind: 'tf',
+          question: `هل العبارة التالية صحيحة وفقاً للمادة؟\n"${item.sentence}"`,
+          options: ['صح', 'خطأ'],
+          answer: 0,
+          source: item.source,
+          explanation: `العبارة صحيحة ومذكورة في (${item.source}).`
+        });
+      } else {
+        const fakeWord = shuffleArray(uniqueKeywords.filter(w => w !== item.keyword))[0];
+        const alteredSentence = item.sentence.replace(item.keyword, fakeWord);
+        questions.push({
+          kind: 'tf',
+          question: `هل العبارة التالية صحيحة وفقاً للمادة؟\n"${alteredSentence}"`,
+          options: ['صح', 'خطأ'],
+          answer: 1,
+          source: item.source,
+          explanation: `العبارة خاطئة؛ الكلمة الصحيحة هي "${item.keyword}" بدلاً من "${fakeWord}" (${item.source}).`
+        });
+      }
+    } else if (qType === 'أكمل الفراغ') {
+      const blanked = item.sentence.replace(item.keyword, '________');
+      questions.push({
+        kind: 'fill',
+        question: `أكمل الفراغ بالكلمة المناسبة:\n"${blanked}"`,
+        correctText: item.keyword,
+        source: item.source,
+        explanation: `الإجابة الصحيحة هي: "${item.keyword}" (${item.source}).`
+      });
     } else {
-      feedback.innerHTML = `❌ الإجابة الصحيحة: ${q.options[q.answer]}. ${q.explanation}`;
-      feedback.style.color = '#d04444';
+      const distractors = shuffleArray(
+        uniqueKeywords.filter(w => w.toLowerCase() !== item.keyword.toLowerCase())
+      ).slice(0, 3);
+
+      const options = shuffleArray([item.keyword, ...distractors]);
+      const answerIndex = options.indexOf(item.keyword);
+      const blanked = item.sentence.replace(item.keyword, '（ ...... ）');
+
+      questions.push({
+        kind: 'mcq',
+        question: `اختر المصطلح أو الكلمة المناسبة لإكمال العبارة:\n"${blanked}"`,
+        options,
+        answer: answerIndex,
+        source: item.source,
+        explanation: `الإجابة الصحيحة هي "${item.keyword}" كما ورد في (${item.source}).`
+      });
     }
   });
 
-  alert(`نتيجتك: ${score} من ${demoQuestions.length}`);
+  return questions;
 }
 
-/* الاختبار */
+function generateQuestionsFromMaterial() {
+  const subjectId = Number(document.getElementById('questionSubject').value);
+  const type = document.getElementById('questionType').value;
+  const difficulty = document.getElementById('difficulty').value;
+  const count = Number(document.getElementById('questionCount').value);
+  const container = document.getElementById('generatedQuestions');
 
-let examQuestions = demoQuestions;
+  const material = materials.find(m => m.id === subjectId);
+  if (!material) {
+    alert('يرجى رفع مادة دراسية واختيارها أولاً.');
+    return;
+  }
+
+  try {
+    currentGeneratedQuiz = buildQuestionsFromMaterial(material, type, difficulty, count);
+    activeQuizSubjectName = material.name;
+
+    container.innerHTML = `
+      <div class="panel">
+        <div class="section-heading">
+          <div>
+            <h3>📝 أسئلة مستخرجة من: ${escapeHTML(material.name)}</h3>
+            <p>النوع: ${escapeHTML(type)} | الصعوبة: ${escapeHTML(difficulty)} | العدد: ${currentGeneratedQuiz.length}</p>
+          </div>
+          <button class="secondary-btn" onclick="sendQuizToExam()">🚀 خوضها كاختبار رسمي</button>
+        </div>
+
+        ${currentGeneratedQuiz.map((q, i) => `
+          <div class="question-box">
+            <strong>${i + 1}. ${escapeHTML(q.question).replace(/\n/g, '<br>')}</strong>
+            <div class="muted" style="margin-top:4px">📌 المصدر: ${escapeHTML(q.source)}</div>
+
+            ${q.kind === 'fill'
+              ? `<input class="form-control" style="margin-top:10px" id="fillAns${i}" placeholder="اكتب الإجابة هنا...">`
+              : q.options.map((option, j) => `
+                  <label class="option">
+                    <input type="radio" name="genQ${i}" value="${j}">
+                    ${escapeHTML(option)}
+                  </label>
+                `).join('')
+            }
+            <div id="genFeedback${i}" class="feedback"></div>
+          </div>
+        `).join('')}
+
+        <button class="primary-btn" onclick="correctGeneratedQuiz()">تصحيح الإجابات</button>
+      </div>
+    `;
+
+    container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  } catch (err) {
+    alert(err.message);
+  }
+}
+
+function correctGeneratedQuiz() {
+  if (!currentGeneratedQuiz.length) return;
+  let score = 0;
+
+  currentGeneratedQuiz.forEach((q, i) => {
+    const feedback = document.getElementById(`genFeedback${i}`);
+
+    if (q.kind === 'fill') {
+      const userVal = (document.getElementById(`fillAns${i}`)?.value || '').trim();
+      const isMatch = userVal && userVal.toLowerCase() === q.correctText.toLowerCase();
+      if (isMatch) {
+        score++;
+        feedback.innerHTML = `✅ إجابة صحيحة! ${escapeHTML(q.explanation)}`;
+        feedback.style.color = 'green';
+      } else {
+        feedback.innerHTML = `❌ ${escapeHTML(q.explanation)}`;
+        feedback.style.color = '#d04444';
+      }
+    } else {
+      const selected = document.querySelector(`input[name="genQ${i}"]:checked`);
+      if (selected && Number(selected.value) === q.answer) {
+        score++;
+        feedback.innerHTML = `✅ إجابة صحيحة. ${escapeHTML(q.explanation)}`;
+        feedback.style.color = 'green';
+      } else {
+        feedback.innerHTML = `❌ ${escapeHTML(q.explanation)}`;
+        feedback.style.color = '#d04444';
+      }
+    }
+  });
+
+  const percent = Math.round((score / currentGeneratedQuiz.length) * 100);
+  alert(`نتيجتك: ${score} من ${currentGeneratedQuiz.length} (${percent}%)`);
+}
+
+function sendQuizToExam() {
+  const mcqOrTf = currentGeneratedQuiz.filter(q => q.kind !== 'fill');
+  if (!mcqOrTf.length) {
+    alert('صفحة الاختبارات تدعم حالياً أسئلة الاختيار من متعدد وصح أو خطأ.');
+    return;
+  }
+  examQuestions = mcqOrTf;
+  document.getElementById('examTitle').textContent = `اختبار في: ${activeQuizSubjectName}`;
+  renderExam();
+  document.getElementById('examResult').textContent = '';
+  showPage('exam');
+}
+
+/* =========================================================
+   الاختبار والنتائج
+   ========================================================= */
+
+let examQuestions = [];
 
 function renderExam() {
   const container = document.getElementById('examQuestions');
 
+  if (!examQuestions.length) {
+    container.innerHTML = `
+      <div class="empty">
+        لا يوجد اختبار جاهز حالياً. اذهب إلى <strong>إنشاء الأسئلة</strong> وولّد أسئلة من مادتك ثم اضغط "خوضها كاختبار رسمي".
+      </div>
+    `;
+    return;
+  }
+
   container.innerHTML = examQuestions.map((q, i) => `
     <div class="question-box">
-      <strong>${i + 1}. ${q.question}</strong>
+      <strong>${i + 1}. ${escapeHTML(q.question).replace(/\n/g, '<br>')}</strong>
       ${q.options.map((option, j) => `
         <label class="option">
           <input type="radio" name="exam${i}" value="${j}">
-          ${option}
+          ${escapeHTML(option)}
         </label>
       `).join('')}
     </div>
@@ -1804,6 +1997,11 @@ function renderExam() {
 let examResults = JSON.parse(localStorage.getItem('studyResults') || '[]');
 
 function correctExam() {
+  if (!examQuestions.length) {
+    alert('يرجى إنشاء اختبار من مادة أولاً.');
+    return;
+  }
+
   let correct = 0;
 
   examQuestions.forEach((q, i) => {
@@ -1818,6 +2016,7 @@ function correctExam() {
   const score = Math.round((correct / examQuestions.length) * 100);
 
   const result = {
+    subject: activeQuizSubjectName,
     correct,
     wrong,
     score,
@@ -1844,7 +2043,7 @@ function renderResults() {
   document.getElementById('lastScore').textContent = last ? last.score + '%' : '0%';
 
   document.getElementById('lastResult').textContent = last
-    ? `آخر نتيجة: ${last.score}% بتاريخ ${last.date}`
+    ? `آخر نتيجة (${last.subject || 'اختبار'}): ${last.score}% بتاريخ ${last.date}`
     : 'لم تؤدِّ أي اختبار حتى الآن.';
 }
 
