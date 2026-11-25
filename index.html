@@ -5,10 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Study Mate | رفيق الدراسة</title>
 
-<!-- مكتبات المرحلة الثانية: قراءة PDF و Word و PowerPoint -->
+<!-- مكتبات المرحلة الثانية: قراءة PDF و Word و PowerPoint و OCR للصور -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap');
@@ -820,7 +821,7 @@ button {
   <section class="page" id="upload">
     <div class="page-title">
       <h1>📤 رفع مادة دراسية</h1>
-      <p>أضف ملف المادة ليتم قراءة نصه وتقسيمه وحفظه في مكتبتك.</p>
+      <p>أضف ملف المادة ليتم قراءة نصه (بما في ذلك صفحات PDF المصورة) وتقسيمه وحفظه في مكتبتك.</p>
     </div>
 
     <div class="panel">
@@ -1264,7 +1265,7 @@ function splitLargeSections(sections, maxCharsPerSection = 12000) {
 }
 
 /* =========================================================
-   قراءة ملفات PDF و Word (.docx) و PowerPoint (.pptx)
+   قراءة ملفات PDF (مع OCR للصور) و Word (.docx) و PowerPoint (.pptx)
    ========================================================= */
 
 function setUploadProgress(percent, statusText) {
@@ -1295,7 +1296,21 @@ async function extractPDF(file) {
 
     const page = await pdf.getPage(pageNum);
     const content = await page.getTextContent();
-    const pageText = cleanText(content.items.map(item => item.str).join(' '));
+    let pageText = cleanText(content.items.map(item => item.str).join(' '));
+
+    // إذا كانت الصفحة صورة بدون نص قابل للنسخ، جرّب OCR عبر Tesseract.js
+    if (!pageText && window.Tesseract) {
+      setUploadProgress(percent, `الصفحة ${pageNum} تبدو صورة؛ جاري التعرف على النص (OCR)...`);
+      const viewport = page.getViewport({ scale: 1.5 });
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      canvas.width = viewport.width;
+      canvas.height = viewport.height;
+
+      await page.render({ canvasContext: ctx, viewport }).promise;
+      const ocrRes = await Tesseract.recognize(canvas, 'ara+eng');
+      pageText = cleanText(ocrRes?.data?.text || '');
+    }
 
     if (pageText) {
       sections.push({
@@ -1306,7 +1321,7 @@ async function extractPDF(file) {
   }
 
   if (!sections.length) {
-    throw new Error('لم يتم العثور على نص قابل للقراءة في ملف PDF (قد يكون ممسوحاً ضوئياً كصور فقط).');
+    throw new Error('لم يتم العثور على نص واضح حتى بعد محاولة التعرف على الصور.');
   }
 
   return sections;
