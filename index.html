@@ -2149,4 +2149,494 @@ async function generateQuestionsFromMaterial() {
         ${currentGeneratedQuiz.map((q, i) => `
           <div class="question-box">
             <strong>${i + 1}. ${escapeHTML(q.question).replace(/\n/g, '<br>')}</strong>
-            <div class="q-translation" id="qTrans${i}"
+            <div class="q-translation" id="qTrans${i}" style="display:${q.translateSource ? 'block' : 'none'}">
+              ${q.translateSource ? '🌐 جاري ترجمة العبارة الإنجليزية...' : ''}
+            </div>
+            <div class="muted" style="margin-top:6px">📌 المصدر: ${escapeHTML(q.source)}</div>
+
+            ${q.kind === 'fill'
+              ? `<input class="form-control" style="margin-top:10px" id="fillAns${i}" placeholder="اكتب الإجابة هنا...">`
+              : q.options.map((option, j) => `
+                  <label class="option">
+                    <input type="radio" name="genQ${i}" value="${j}">
+                    ${escapeHTML(option)}
+                  </label>
+                `).join('')
+            }
+            <div id="genFeedback${i}" class="feedback"></div>
+          </div>
+        `).join('')}
+
+        <button class="primary-btn" onclick="correctGeneratedQuiz()">تصحيح الإجابات</button>
+      </div>
+    `;
+
+    container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+    for (let i = 0; i < currentGeneratedQuiz.length; i++) {
+      const q = currentGeneratedQuiz[i];
+      if (q.translateSource) {
+        const arTrans = await translateText(q.translateSource, 'en', 'ar');
+        const transBox = document.getElementById(`qTrans${i}`);
+        if (transBox) {
+          transBox.innerHTML = arTrans
+            ? `🌐 <strong>الترجمة العربية:</strong> ${escapeHTML(arTrans)}`
+            : '🌐 <em>تعذر جلب الترجمة الآن؛ تأكد من الاتصال بالإنترنت.</em>';
+        }
+      }
+    }
+  } catch (err) {
+    alert(err.message);
+  }
+}
+
+function correctGeneratedQuiz() {
+  if (!currentGeneratedQuiz.length) return;
+  let score = 0;
+
+  currentGeneratedQuiz.forEach((q, i) => {
+    const feedback = document.getElementById(`genFeedback${i}`);
+
+    if (q.kind === 'fill') {
+      const userVal = (document.getElementById(`fillAns${i}`)?.value || '').trim();
+      const isMatch = userVal && userVal.toLowerCase() === q.correctText.toLowerCase();
+      if (isMatch) {
+        score++;
+        feedback.innerHTML = `✅ إجابة صحيحة! ${escapeHTML(q.explanation)}`;
+        feedback.style.color = 'green';
+      } else {
+        feedback.innerHTML = `❌ ${escapeHTML(q.explanation)}`;
+        feedback.style.color = '#d04444';
+      }
+    } else {
+      const selected = document.querySelector(`input[name="genQ${i}"]:checked`);
+      if (selected && Number(selected.value) === q.answer) {
+        score++;
+        feedback.innerHTML = `✅ إجابة صحيحة. ${escapeHTML(q.explanation)}`;
+        feedback.style.color = 'green';
+      } else {
+        feedback.innerHTML = `❌ ${escapeHTML(q.explanation)}`;
+        feedback.style.color = '#d04444';
+      }
+    }
+  });
+
+  const percent = Math.round((score / currentGeneratedQuiz.length) * 100);
+  alert(`نتيجتك: ${score} من ${currentGeneratedQuiz.length} (${percent}%)`);
+}
+
+function sendQuizToExam() {
+  const mcqOrTf = currentGeneratedQuiz.filter(q => q.kind !== 'fill');
+  if (!mcqOrTf.length) {
+    alert('صفحة الاختبارات تدعم حالياً أسئلة الاختيار من متعدد وصح أو خطأ.');
+    return;
+  }
+  examQuestions = mcqOrTf;
+  document.getElementById('examTitle').textContent = `اختبار في: ${activeQuizSubjectName}`;
+  renderExam();
+  document.getElementById('examResult').textContent = '';
+  showPage('exam');
+}
+
+/* =========================================================
+   الاختبار والنتائج
+   ========================================================= */
+
+let examQuestions = [];
+
+function renderExam() {
+  const container = document.getElementById('examQuestions');
+
+  if (!examQuestions.length) {
+    container.innerHTML = `
+      <div class="empty">
+        لا يوجد اختبار جاهز حالياً. اذهب إلى <strong>إنشاء الأسئلة</strong> وولّد أسئلة من مادتك ثم اضغط "خوضها كاختبار رسمي".
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = examQuestions.map((q, i) => `
+    <div class="question-box">
+      <strong>${i + 1}. ${escapeHTML(q.question).replace(/\n/g, '<br>')}</strong>
+      ${q.options.map((option, j) => `
+        <label class="option">
+          <input type="radio" name="exam${i}" value="${j}">
+          ${escapeHTML(option)}
+        </label>
+      `).join('')}
+    </div>
+  `).join('');
+}
+
+let examResults = JSON.parse(localStorage.getItem('studyResults') || '[]');
+
+function correctExam() {
+  if (!examQuestions.length) {
+    alert('يرجى إنشاء اختبار من مادة أولاً.');
+    return;
+  }
+
+  let correct = 0;
+
+  examQuestions.forEach((q, i) => {
+    const selected = document.querySelector(`input[name="exam${i}"]:checked`);
+
+    if (selected && Number(selected.value) === q.answer) {
+      correct++;
+    }
+  });
+
+  const wrong = examQuestions.length - correct;
+  const score = Math.round((correct / examQuestions.length) * 100);
+
+  const result = {
+    subject: activeQuizSubjectName,
+    correct,
+    wrong,
+    score,
+    date: new Date().toLocaleDateString('ar')
+  };
+
+  examResults.push(result);
+  localStorage.setItem('studyResults', JSON.stringify(examResults));
+
+  document.getElementById('examResult').innerHTML =
+    `نتيجتك: ${score}% - الصحيحة: ${correct} - الخاطئة: ${wrong}`;
+
+  renderResults();
+}
+
+function renderResults() {
+  const totalCorrect = examResults.reduce((sum, item) => sum + item.correct, 0);
+  const totalWrong = examResults.reduce((sum, item) => sum + item.wrong, 0);
+  const last = examResults[examResults.length - 1];
+
+  document.getElementById('totalExams').textContent = examResults.length;
+  document.getElementById('totalCorrect').textContent = totalCorrect;
+  document.getElementById('totalWrong').textContent = totalWrong;
+  document.getElementById('lastScore').textContent = last ? last.score + '%' : '0%';
+
+  document.getElementById('lastResult').textContent = last
+    ? `آخر نتيجة (${last.subject || 'اختبار'}): ${last.score}% بتاريخ ${last.date}`
+    : 'لم تؤدِّ أي اختبار حتى الآن.';
+}
+
+/* =========================================================
+   قسم تعلم الإنجليزية: ترجمة متبادلة (إنجليزي ↔ عربي) + نطق
+   ========================================================= */
+
+async function translateField(direction) {
+  const enInput = document.getElementById('englishWord');
+  const arInput = document.getElementById('arabicWord');
+  const statusEl = document.getElementById('translationStatus');
+
+  if (direction === 'en') {
+    const text = enInput.value.trim();
+    if (!text) {
+      alert('اكتب الكلمة أو العبارة بالإنجليزية أولاً.');
+      return;
+    }
+    statusEl.textContent = 'جاري الترجمة إلى العربية...';
+    const result = await translateText(text, 'en', 'ar');
+    if (result) {
+      arInput.value = result;
+      statusEl.textContent = `تمت الترجمة: "${text}" ← "${result}"`;
+    } else {
+      statusEl.textContent = 'تعذر إتمام الترجمة حالياً؛ تحقق من الإنترنت أو جرّب مرة أخرى.';
+    }
+  } else {
+    const text = arInput.value.trim();
+    if (!text) {
+      alert('اكتب الكلمة أو العبارة بالعربية أولاً.');
+      return;
+    }
+    statusEl.textContent = 'جاري الترجمة إلى الإنجليزية...';
+    const result = await translateText(text, 'ar', 'en');
+    if (result) {
+      enInput.value = result;
+      statusEl.textContent = `تمت الترجمة: "${text}" ← "${result}"`;
+    } else {
+      statusEl.textContent = 'تعذر إتمام الترجمة حالياً؛ تحقق من الإنترنت أو جرّب مرة أخرى.';
+    }
+  }
+}
+
+function speakWord(language) {
+  const word = document.getElementById('englishWord').value.trim();
+  const translation = document.getElementById('arabicWord').value.trim();
+
+  const text = language === 'en' ? word : translation;
+
+  if (!text) {
+    alert('يرجى كتابة الكلمة أو ترجمتها أولاً.');
+    return;
+  }
+
+  if (!('speechSynthesis' in window)) {
+    alert('المتصفح لا يدعم خاصية الاستماع.');
+    return;
+  }
+
+  const speech = new SpeechSynthesisUtterance(text);
+  speech.lang = language === 'en' ? 'en-US' : 'ar';
+  speech.rate = 0.85;
+
+  window.speechSynthesis.cancel();
+  window.speechSynthesis.speak(speech);
+}
+
+/* =========================================================
+   قسم التحدث عبر الصوت + الوجه التفاعلي المتزامن مع الكلمات
+   ========================================================= */
+
+const SpeechRecAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
+let recognitionInstance = null;
+let lastBotReplyText = '';
+let mouthSyncTimer = null;
+
+function setAvatarState(state, emotion = 'neutral', statusLabel = '', emotionHint = '') {
+  const avatar = document.getElementById('studyAvatar');
+  const badge = document.getElementById('voiceStatusBadge');
+  const hint = document.getElementById('spokenEmotionHint');
+  if (!avatar) return;
+
+  avatar.classList.remove('state-idle', 'state-listening', 'state-thinking', 'state-speaking', 'emotion-happy', 'emotion-alert');
+  avatar.classList.add(`state-${state || 'idle'}`);
+  if (emotion === 'happy') avatar.classList.add('emotion-happy');
+  if (emotion === 'alert') avatar.classList.add('emotion-alert');
+
+  if (badge && statusLabel) badge.textContent = statusLabel;
+  if (hint && emotionHint) hint.textContent = emotionHint;
+}
+
+function detectEmotionFromWords(text) {
+  const t = String(text || '').toLowerCase();
+  if (/ممتاز|رائع|أحسنت|نجاح|برافو|great|awesome|good|well done|مبروك/.test(t)) {
+    return { emotion: 'happy', label: 'التعبير الحالي: مشجّع وسعيد' };
+  }
+  if (/تنبيه|خطأ|انتبه|صعب|مشكلة|warning|careful|error|wrong/.test(t)) {
+    return { emotion: 'alert', label: 'التعبير الحالي: منتبه وموضّح' };
+  }
+  return { emotion: 'neutral', label: 'التعبير الحالي: متفاعل وواضح' };
+}
+
+function animateMouthWithWords(text) {
+  clearInterval(mouthSyncTimer);
+  const mouth = document.getElementById('avatarMouth');
+  const words = String(text || '').split(/\s+/).filter(Boolean);
+  if (!mouth || !words.length) return;
+
+  let idx = 0;
+  mouthSyncTimer = setInterval(() => {
+    if (idx >= words.length) {
+      clearInterval(mouthSyncTimer);
+      mouth.setAttribute('d', 'M82 142 Q110 158 138 142');
+      return;
+    }
+    const word = words[idx];
+    const openness = Math.min(26, Math.max(8, word.length * 2.5));
+    mouth.setAttribute('d', `M82 140 Q110 ${142 + openness} 138 140`);
+    idx++;
+  }, 240);
+}
+
+function speakWithAvatar(text, lang = 'ar-SA') {
+  const clean = String(text || '').trim();
+  if (!clean) return;
+  lastBotReplyText = clean;
+
+  const { emotion, label } = detectEmotionFromWords(clean);
+  setAvatarState('speaking', emotion, 'يتحدث الآن...', label);
+  animateMouthWithWords(clean);
+
+  if (!('speechSynthesis' in window)) {
+    setTimeout(() => {
+      setAvatarState('idle', emotion, 'جاهز للاستماع إليك', label);
+    }, Math.min(5000, clean.length * 70));
+    return;
+  }
+
+  window.speechSynthesis.cancel();
+  const utter = new SpeechSynthesisUtterance(clean);
+  utter.lang = lang;
+  utter.rate = 0.95;
+
+  utter.onboundary = (event) => {
+    if (event.name === 'word') {
+      const emo = detectEmotionFromWords(clean.slice(event.charIndex, event.charIndex + 30));
+      setAvatarState('speaking', emo.emotion, 'يتحدث الآن...', emo.label);
+    }
+  };
+
+  utter.onend = () => {
+    clearInterval(mouthSyncTimer);
+    setAvatarState('idle', 'neutral', 'جاهز للاستماع إليك', 'التعبير الحالي: هادئ ومرحّب');
+  };
+
+  utter.onerror = () => {
+    clearInterval(mouthSyncTimer);
+    setAvatarState('idle', 'neutral', 'جاهز للاستماع إليك', 'التعبير الحالي: هادئ ومرحّب');
+  };
+
+  window.speechSynthesis.speak(utter);
+}
+
+function replayLastVoiceReply() {
+  if (!lastBotReplyText) {
+    alert('لا يوجد رد صوتي سابق لإعادة تشغيله.');
+    return;
+  }
+  const lang = document.getElementById('voiceLangSelect')?.value || 'ar-SA';
+  speakWithAvatar(lastBotReplyText, lang);
+}
+
+function buildVoiceReplyFromMaterials(spokenText, lang) {
+  const query = String(spokenText || '').trim();
+  if (!query) {
+    return lang.startsWith('en')
+      ? 'I did not catch that. Please try speaking again.'
+      : 'لم أسمع بوضوح، جرّب التحدث مرة أخرى.';
+  }
+
+  const words = query.toLowerCase().split(/\s+/).filter(w => w.length >= 3);
+  for (const mat of materials) {
+    const sections = Array.isArray(mat.sections) ? mat.sections : [];
+    for (const sec of sections) {
+      const secLower = (sec.text || '').toLowerCase();
+      if (words.some(w => secLower.includes(w))) {
+        const snippet = (sec.text || '').replace(/\s+/g, ' ').trim().slice(0, 220);
+        return lang.startsWith('en')
+          ? `From your material ${mat.name} (${sec.title}): ${snippet}`
+          : `من مادتك (${mat.name} - ${sec.title}): ${snippet}`;
+      }
+    }
+  }
+
+  if (/مرحبا|أهلا|سلام|كيف حالك|hello|hi/.test(query.toLowerCase())) {
+    return lang.startsWith('en')
+      ? 'Hello! I am Study Mate. Ask me about your uploaded lessons or practice words.'
+      : 'أهلاً بك يا بطل! أنا مساعدك في Study Mate، اسألني عن دروسك أو موادك المرفوعة.';
+  }
+
+  return lang.startsWith('en')
+    ? `You said: "${query}". Upload or select a study material so I can give you exact answers from your notes.`
+    : `سمعتك تقول: "${query}". يمكنك سؤالي عن أي موضوع موجود في المواد التي رفعتها إلى مكتبتك.`;
+}
+
+function handleSpokenQuery(transcript) {
+  const lang = document.getElementById('voiceLangSelect')?.value || 'ar-SA';
+  document.getElementById('userSpokenText').textContent = transcript;
+  setAvatarState('thinking', 'neutral', 'جاري التفكير والبحث...', 'التعبير الحالي: يفكّر ويحلل كلامك');
+
+  setTimeout(() => {
+    const reply = buildVoiceReplyFromMaterials(transcript, lang);
+    document.getElementById('botSpokenReply').textContent = reply;
+    speakWithAvatar(reply, lang);
+  }, 550);
+}
+
+function startVoiceListening() {
+  if (!SpeechRecAPI) {
+    alert('متصفحك لا يدعم التعرف على الصوت (SpeechRecognition). جرّب Google Chrome أو Edge.');
+    return;
+  }
+
+  const lang = document.getElementById('voiceLangSelect')?.value || 'ar-SA';
+  recognitionInstance = new SpeechRecAPI();
+  recognitionInstance.lang = lang;
+  recognitionInstance.interimResults = true;
+  recognitionInstance.maxAlternatives = 1;
+
+  setAvatarState('listening', 'neutral', 'جاري الاستماع لصوتك...', 'التعبير الحالي: منتبه ومستمع');
+
+  recognitionInstance.onresult = (event) => {
+    let interimOrFinal = '';
+    let isFinal = false;
+    for (let i = event.resultIndex; i < event.results.length; i++) {
+      interimOrFinal += event.results[i][0].transcript;
+      if (event.results[i].isFinal) isFinal = true;
+    }
+    document.getElementById('userSpokenText').textContent = interimOrFinal || 'جاري الاستماع...';
+    if (isFinal && interimOrFinal.trim()) {
+      handleSpokenQuery(interimOrFinal.trim());
+    }
+  };
+
+  recognitionInstance.onerror = (e) => {
+    setAvatarState('idle', 'alert', 'تعذر التقاط الصوت', 'التعبير الحالي: يرجى التأكد من الميكروفون');
+    if (e.error === 'not-allowed') {
+      alert('يرجى السماح للموقع باستخدام الميكروفون من إعدادات المتصفح.');
+    }
+  };
+
+  recognitionInstance.onend = () => {
+    const badge = document.getElementById('voiceStatusBadge');
+    if (badge && badge.textContent === 'جاري الاستماع لصوتك...') {
+      setAvatarState('idle', 'neutral', 'جاهز للاستماع إليك', 'التعبير الحالي: هادئ ومرحّب');
+    }
+  };
+
+  recognitionInstance.start();
+}
+
+function stopVoiceListening() {
+  if (recognitionInstance) {
+    try { recognitionInstance.stop(); } catch (_) {}
+  }
+  if ('speechSynthesis' in window) {
+    window.speechSynthesis.cancel();
+  }
+  clearInterval(mouthSyncTimer);
+  setAvatarState('idle', 'neutral', 'تم الإيقاف', 'التعبير الحالي: هادئ ومرحّب');
+}
+
+/* الإعدادات */
+
+function saveSettings() {
+  const name = document.getElementById('studentName').value.trim();
+
+  if (!name) {
+    alert('يرجى كتابة الاسم.');
+    return;
+  }
+
+  localStorage.setItem('studentName', name);
+  document.querySelector('.welcome h2').textContent = `مرحباً بك يا ${name} 👋`;
+
+  alert('تم حفظ الاسم على هذا الجهاز.');
+}
+
+/* البحث البسيط */
+
+document.getElementById('searchInput').addEventListener('input', function() {
+  const value = this.value.trim().toLowerCase();
+
+  if (!value) return;
+
+  const match = materials.find(item =>
+    item.name.toLowerCase().includes(value) ||
+    (item.fullText && item.fullText.toLowerCase().includes(value))
+  );
+
+  if (match) showPage('library');
+});
+
+/* تشغيل الموقع عند فتحه */
+
+const savedName = localStorage.getItem('studentName');
+
+if (savedName) {
+  document.getElementById('studentName').value = savedName;
+  document.querySelector('.welcome h2').textContent =
+    `مرحباً بك يا ${savedName} 👋`;
+}
+
+renderExam();
+renderResults();
+loadMaterials();
+
+</script>
+
+</body>
+</html>
