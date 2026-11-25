@@ -1,10 +1,14 @@
-
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Study Mate | رفيق الدراسة</title>
+
+<!-- مكتبات المرحلة الثانية: قراءة PDF و Word و PowerPoint -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap');
@@ -227,6 +231,29 @@ button {
   font-size: 13px;
 }
 
+.primary-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.secondary-btn {
+  background: #eef2ff;
+  color: var(--blue);
+  padding: 7px 12px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.danger-btn {
+  background: #fee2e2;
+  color: #b91c1c;
+  padding: 7px 12px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
 .hero .primary-btn {
   background: white;
   color: #2859cf;
@@ -237,6 +264,8 @@ button {
   justify-content: space-between;
   align-items: center;
   margin: 25px 0 15px;
+  flex-wrap: wrap;
+  gap: 10px;
 }
 
 .section-heading h3 {
@@ -309,14 +338,22 @@ button {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 13px 0;
+  padding: 14px 0;
   border-bottom: 1px solid var(--border);
   font-size: 12px;
-  gap: 10px;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 
 .list-item:last-child {
   border: none;
+}
+
+.item-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
 .muted {
@@ -330,6 +367,7 @@ button {
   padding: 5px 10px;
   border-radius: 20px;
   font-size: 10px;
+  font-weight: 700;
 }
 
 /* الصفحات الداخلية */
@@ -392,6 +430,13 @@ button {
   padding: 35px 15px;
   text-align: center;
   cursor: pointer;
+  display: block;
+  transition: .2s;
+}
+
+.upload-area.dragover {
+  border-color: var(--blue);
+  background: #edf3ff;
 }
 
 .upload-area div {
@@ -406,6 +451,94 @@ button {
 
 .upload-area input {
   display: none;
+}
+
+/* شريط تقدم المعالجة */
+.progress-box {
+  display: none;
+  margin-top: 15px;
+  background: #f7f9ff;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 14px;
+}
+
+.progress-track {
+  width: 100%;
+  height: 8px;
+  background: #e2e8f0;
+  border-radius: 999px;
+  overflow: hidden;
+  margin-top: 8px;
+}
+
+.progress-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, var(--blue), var(--purple));
+  transition: width .25s ease;
+}
+
+/* عارض محتوى المادة */
+.reader-panel {
+  display: none;
+  margin-top: 20px;
+}
+
+.reader-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.section-tabs {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 10px;
+  margin-bottom: 14px;
+  border-bottom: 1px solid var(--border);
+}
+
+.sec-tab {
+  background: #f1f5f9;
+  color: var(--text);
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 11px;
+  white-space: nowrap;
+  font-weight: 700;
+}
+
+.sec-tab.active {
+  background: var(--blue);
+  color: white;
+}
+
+.extracted-box {
+  background: #f8fafc;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 18px;
+  line-height: 2;
+  font-size: 13px;
+  white-space: pre-wrap;
+  max-height: 430px;
+  overflow-y: auto;
+}
+
+.headings-box {
+  background: #f7f9ff;
+  border-radius: 10px;
+  padding: 12px 15px;
+  margin-bottom: 14px;
+  font-size: 12px;
+}
+
+.headings-box ul {
+  margin-top: 6px;
+  padding-right: 18px;
 }
 
 .question-box {
@@ -659,7 +792,7 @@ button {
   <section class="page" id="library">
     <div class="page-title">
       <h1>📚 مكتبتي الدراسية</h1>
-      <p>جميع المواد التي أضفتها إلى حسابك.</p>
+      <p>جميع المواد التي أضفتها واستخرجت محتواها إلى حسابك.</p>
     </div>
 
     <div class="panel">
@@ -669,13 +802,25 @@ button {
       </div>
       <div id="materialsList"></div>
     </div>
+
+    <!-- عارض محتوى المادة المستخرج -->
+    <div class="panel reader-panel" id="readerPanel">
+      <div class="section-heading">
+        <h3 id="readerTitle">📖 محتوى المادة</h3>
+        <button class="secondary-btn" onclick="closeReader()">إغلاق العارض ✕</button>
+      </div>
+      <div class="reader-meta" id="readerMeta"></div>
+      <div class="headings-box" id="readerHeadings" style="display:none"></div>
+      <div class="section-tabs" id="sectionTabs"></div>
+      <div class="extracted-box" id="readerText"></div>
+    </div>
   </section>
 
   <!-- رفع مادة -->
   <section class="page" id="upload">
     <div class="page-title">
       <h1>📤 رفع مادة دراسية</h1>
-      <p>أضف ملف المادة إلى مكتبتك الدراسية.</p>
+      <p>أضف ملف المادة ليتم قراءة نصه وتقسيمه وحفظه في مكتبتك.</p>
     </div>
 
     <div class="panel">
@@ -691,18 +836,24 @@ button {
         <input class="form-control" id="unitName" placeholder="مثال: الوحدة الأولى">
       </div>
 
-      <label class="upload-area" for="fileInput">
+      <label class="upload-area" id="uploadDropArea" for="fileInput">
         <div>📁</div>
-        <strong>اضغط هنا لاختيار ملفك</strong>
-        <p>PDF أو Word أو PowerPoint</p>
-        <input type="file" id="fileInput"
-          accept=".pdf,.doc,.docx,.ppt,.pptx">
+        <strong>اضغط هنا أو اسحب ملفك إلى هنا</strong>
+        <p>المدعومة: PDF (.pdf) و Word (.docx) و PowerPoint (.pptx)</p>
+        <input type="file" id="fileInput" accept=".pdf,.doc,.docx,.ppt,.pptx">
       </label>
 
       <p id="selectedFile" class="muted" style="margin-top:12px"></p>
 
-      <button class="primary-btn" onclick="saveMaterial()">
-        حفظ المادة في مكتبتي
+      <div class="progress-box" id="uploadProgressBox">
+        <div id="uploadStatusText" style="font-size:12px;font-weight:700">جاري التحضير...</div>
+        <div class="progress-track">
+          <div class="progress-fill" id="uploadProgressFill"></div>
+        </div>
+      </div>
+
+      <button class="primary-btn" id="saveMaterialBtn" onclick="saveMaterial()">
+        قراءة وحفظ المادة في مكتبتي
       </button>
     </div>
   </section>
@@ -891,6 +1042,11 @@ button {
 </div>
 
 <script>
+/* إعداد PDF.js Worker */
+if (window.pdfjsLib) {
+  pdfjsLib.GlobalWorkerOptions.workerSrc =
+    'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+}
 
 /* التنقل بين الصفحات */
 
@@ -928,72 +1084,464 @@ function toggleMenu() {
   document.getElementById('sidebar').classList.toggle('open');
 }
 
-/* حفظ المواد */
+/* =========================================================
+   قاعدة بيانات IndexedDB للمواد الدراسية ونصوصها المستخرجة
+   ========================================================= */
 
-let materials = JSON.parse(localStorage.getItem('studyMaterials') || '[]');
+const DB_NAME = 'StudyMateDB';
+const DB_VERSION = 1;
+const STORE_MATERIALS = 'materials';
+let materials = [];
 
-function saveMaterials() {
-  localStorage.setItem('studyMaterials', JSON.stringify(materials));
+function openDB() {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(DB_NAME, DB_VERSION);
+
+    request.onupgradeneeded = (event) => {
+      const db = event.target.result;
+      if (!db.objectStoreNames.contains(STORE_MATERIALS)) {
+        db.createObjectStore(STORE_MATERIALS, { keyPath: 'id' });
+      }
+    };
+
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
 }
 
-document.getElementById('fileInput').addEventListener('change', function() {
-  const file = this.files[0];
+async function getAllMaterialsFromDB() {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE_MATERIALS, 'readonly');
+    const store = tx.objectStore(STORE_MATERIALS);
+    const req = store.getAll();
+    req.onsuccess = () => resolve(req.result || []);
+    req.onerror = () => reject(req.error);
+  });
+}
 
+async function putMaterialInDB(material) {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE_MATERIALS, 'readwrite');
+    const store = tx.objectStore(STORE_MATERIALS);
+    const req = store.put(material);
+    req.onsuccess = () => resolve();
+    req.onerror = () => reject(req.error);
+  });
+}
+
+async function deleteMaterialFromDB(id) {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE_MATERIALS, 'readwrite');
+    const store = tx.objectStore(STORE_MATERIALS);
+    const req = store.delete(id);
+    req.onsuccess = () => resolve();
+    req.onerror = () => reject(req.error);
+  });
+}
+
+async function migrateLegacyLocalStorageMaterials() {
+  const legacyRaw = localStorage.getItem('studyMaterials');
+  if (!legacyRaw) return;
+  try {
+    const legacyList = JSON.parse(legacyRaw);
+    if (Array.isArray(legacyList) && legacyList.length) {
+      for (const item of legacyList) {
+        await putMaterialInDB({
+          id: item.id || Date.now() + Math.random(),
+          name: item.name || 'مادة سابقة',
+          unit: item.unit || '',
+          file: item.file || 'ملف سابق',
+          fileType: 'legacy',
+          date: item.date || new Date().toLocaleDateString('ar'),
+          language: 'unknown',
+          headings: [],
+          sections: [
+            {
+              title: 'ملاحظة',
+              text: 'تم نقل هذا السجل من الإصدار السابق؛ يُنصح بإعادة رفع الملف لاستخراج نصه الكامل.'
+            }
+          ],
+          fullText: ''
+        });
+      }
+    }
+    localStorage.removeItem('studyMaterials');
+  } catch (e) {
+    console.warn('تعذر ترحيل البيانات القديمة:', e);
+  }
+}
+
+async function loadMaterials() {
+  await migrateLegacyLocalStorageMaterials();
+  materials = await getAllMaterialsFromDB();
+  materials.sort((a, b) => a.id - b.id);
+  renderMaterials();
+  renderHomeMaterials();
+  updateSubjectOptions();
+}
+
+/* =========================================================
+   تنظيف النص، تقدير اللغة، استخراج العناوين، وتقسيم الملفات الكبيرة
+   ========================================================= */
+
+function cleanText(raw) {
+  return String(raw || '')
+    .replace(/\r\n/g, '\n')
+    .replace(/[ \t]+/g, ' ')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
+function detectLanguage(text) {
+  const sample = text.slice(0, 3000);
+  const arMatches = (sample.match(/[\u0600-\u06FF]/g) || []).length;
+  const enMatches = (sample.match(/[A-Za-z]/g) || []).length;
+
+  if (!arMatches && !enMatches) return 'غير محدد';
+  if (arMatches > 0 && enMatches > 0) {
+    const ratio = Math.min(arMatches, enMatches) / Math.max(arMatches, enMatches);
+    if (ratio > 0.2) return 'مختلط (عربي / إنجليزي)';
+  }
+  return arMatches >= enMatches ? 'العربية' : 'الإنجليزية';
+}
+
+function extractHeadings(sections) {
+  const headings = [];
+  const seen = new Set();
+
+  for (const sec of sections) {
+    const lines = (sec.text || '').split('\n').map(l => l.trim()).filter(Boolean);
+    for (const line of lines) {
+      const isHeadingPattern =
+        /^(الفصل|الوحدة|الباب|الدرس|مقدمة|خاتمة|Chapter|Unit|Section|Lesson)\b/i.test(line) ||
+        (line.length >= 4 && line.length <= 75 && !/[.،؛:!؟?]$/.test(line) && line.split(' ').length <= 9);
+
+      if (isHeadingPattern && !seen.has(line)) {
+        seen.add(line);
+        headings.push(`${line} (${sec.title})`);
+      }
+      if (headings.length >= 25) break;
+    }
+    if (headings.length >= 25) break;
+  }
+
+  return headings;
+}
+
+/* تقسيم النصوص الطويلة جداً إلى أجزاء متوسطة ليسهل التعامل معها */
+function splitLargeSections(sections, maxCharsPerSection = 12000) {
+  const result = [];
+
+  for (const sec of sections) {
+    const txt = cleanText(sec.text);
+    if (!txt) continue;
+
+    if (txt.length <= maxCharsPerSection) {
+      result.push({ title: sec.title, text: txt });
+    } else {
+      let start = 0;
+      let partNum = 1;
+      while (start < txt.length) {
+        let end = Math.min(start + maxCharsPerSection, txt.length);
+        if (end < txt.length) {
+          const lastBreak = txt.lastIndexOf('\n', end);
+          if (lastBreak > start + 2000) end = lastBreak;
+        }
+        result.push({
+          title: `${sec.title} - جزء ${partNum}`,
+          text: txt.slice(start, end).trim()
+        });
+        start = end;
+        partNum++;
+      }
+    }
+  }
+
+  return result;
+}
+
+/* =========================================================
+   قراءة ملفات PDF و Word (.docx) و PowerPoint (.pptx)
+   ========================================================= */
+
+function setUploadProgress(percent, statusText) {
+  const box = document.getElementById('uploadProgressBox');
+  const fill = document.getElementById('uploadProgressFill');
+  const label = document.getElementById('uploadStatusText');
+  box.style.display = 'block';
+  fill.style.width = `${Math.min(100, Math.max(0, percent))}%`;
+  label.textContent = statusText;
+}
+
+function hideUploadProgress() {
+  document.getElementById('uploadProgressBox').style.display = 'none';
+  document.getElementById('uploadProgressFill').style.width = '0%';
+}
+
+async function extractPDF(file) {
+  if (!window.pdfjsLib) {
+    throw new Error('مكتبة PDF.js غير محمّلة. تأكد من الاتصال بالإنترنت.');
+  }
+  const arrayBuffer = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+  const sections = [];
+
+  for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+    const percent = 15 + Math.round((pageNum / pdf.numPages) * 65);
+    setUploadProgress(percent, `جاري قراءة صفحة PDF ${pageNum} من ${pdf.numPages}...`);
+
+    const page = await pdf.getPage(pageNum);
+    const content = await page.getTextContent();
+    const pageText = cleanText(content.items.map(item => item.str).join(' '));
+
+    if (pageText) {
+      sections.push({
+        title: `صفحة ${pageNum}`,
+        text: pageText
+      });
+    }
+  }
+
+  if (!sections.length) {
+    throw new Error('لم يتم العثور على نص قابل للقراءة في ملف PDF (قد يكون ممسوحاً ضوئياً كصور فقط).');
+  }
+
+  return sections;
+}
+
+async function extractWord(file) {
+  if (!window.mammoth) {
+    throw new Error('مكتبة Mammoth.js غير محمّلة. تأكد من الاتصال بالإنترنت.');
+  }
+  setUploadProgress(35, 'جاري استخراج النص من ملف Word...');
+  const arrayBuffer = await file.arrayBuffer();
+  const res = await mammoth.extractRawText({ arrayBuffer });
+  const text = cleanText(res.value);
+
+  if (!text) {
+    throw new Error('ملف Word فارغ أو لا يحتوي على نص مقروء.');
+  }
+
+  return [{ title: 'محتوى المستند', text }];
+}
+
+function decodeXmlEntities(str) {
+  return str
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&apos;/g, "'");
+}
+
+async function extractPowerPoint(file) {
+  if (!window.JSZip) {
+    throw new Error('مكتبة JSZip غير محمّلة. تأكد من الاتصال بالإنترنت.');
+  }
+  setUploadProgress(30, 'جاري فك ضغط وقراءة شرائح PowerPoint...');
+  const arrayBuffer = await file.arrayBuffer();
+  const zip = await JSZip.loadAsync(arrayBuffer);
+
+  const slideFiles = Object.keys(zip.files)
+    .filter(name => /^ppt\/slides\/slide\d+\.xml$/i.test(name))
+    .sort((a, b) => {
+      const numA = parseInt(a.match(/slide(\d+)\.xml/i)[1], 10);
+      const numB = parseInt(b.match(/slide(\d+)\.xml/i)[1], 10);
+      return numA - numB;
+    });
+
+  if (!slideFiles.length) {
+    throw new Error('لم يتم العثور على شرائح نصية في ملف PowerPoint.');
+  }
+
+  const sections = [];
+
+  for (let i = 0; i < slideFiles.length; i++) {
+    const percent = 35 + Math.round(((i + 1) / slideFiles.length) * 45);
+    setUploadProgress(percent, `جاري قراءة الشريحة ${i + 1} من ${slideFiles.length}...`);
+
+    const xmlContent = await zip.files[slideFiles[i]].async('string');
+    const textMatches = [...xmlContent.matchAll(/<a:t[^>]*>([\s\S]*?)<\/a:t>/g)];
+    const slideText = cleanText(
+      textMatches.map(m => decodeXmlEntities(m[1])).join(' ')
+    );
+
+    if (slideText) {
+      sections.push({
+        title: `شريحة ${i + 1}`,
+        text: slideText
+      });
+    }
+  }
+
+  if (!sections.length) {
+    throw new Error('الشرائح لا تحتوي على نصوص مستخرجة (قد تكون صوراً فقط).');
+  }
+
+  return sections;
+}
+
+async function parseStudyFile(file) {
+  const ext = (file.name.split('.').pop() || '').toLowerCase();
+
+  if (ext === 'pdf') {
+    return { ext, rawSections: await extractPDF(file) };
+  }
+  if (ext === 'docx') {
+    return { ext, rawSections: await extractWord(file) };
+  }
+  if (ext === 'pptx') {
+    return { ext, rawSections: await extractPowerPoint(file) };
+  }
+  if (ext === 'doc' || ext === 'ppt') {
+    throw new Error(`صيغة .${ext} القديمة غير مدعومة مباشرة في المتصفح؛ يُرجى حفظ الملف بصيغة .docx أو .pptx أو .pdf.`);
+  }
+
+  throw new Error('صيغة الملف غير مدعومة. استخدم PDF أو Word (.docx) أو PowerPoint (.pptx).');
+}
+
+/* =========================================================
+   واجهة الرفع، السحب والإفلات، والحفظ في IndexedDB
+   ========================================================= */
+
+const fileInputEl = document.getElementById('fileInput');
+const dropAreaEl = document.getElementById('uploadDropArea');
+
+function handleFileChosen(file) {
+  if (!file) return;
+  const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
   document.getElementById('selectedFile').textContent =
-    file ? 'الملف المختار: ' + file.name : '';
+    `الملف المختار: ${file.name} (${sizeMB} MB)`;
+}
+
+fileInputEl.addEventListener('change', function () {
+  handleFileChosen(this.files[0]);
 });
 
-function saveMaterial() {
+['dragenter', 'dragover'].forEach(evt => {
+  dropAreaEl.addEventListener(evt, (e) => {
+    e.preventDefault();
+    dropAreaEl.classList.add('dragover');
+  });
+});
+
+['dragleave', 'drop'].forEach(evt => {
+  dropAreaEl.addEventListener(evt, (e) => {
+    e.preventDefault();
+    dropAreaEl.classList.remove('dragover');
+  });
+});
+
+dropAreaEl.addEventListener('drop', (e) => {
+  const droppedFile = e.dataTransfer?.files?.[0];
+  if (droppedFile) {
+    const dt = new DataTransfer();
+    dt.items.add(droppedFile);
+    fileInputEl.files = dt.files;
+    handleFileChosen(droppedFile);
+  }
+});
+
+async function saveMaterial() {
   const name = document.getElementById('subjectName').value.trim();
   const unit = document.getElementById('unitName').value.trim();
-  const file = document.getElementById('fileInput').files[0];
+  const file = fileInputEl.files[0];
+  const saveBtn = document.getElementById('saveMaterialBtn');
 
   if (!name || !file) {
     alert('يرجى كتابة اسم المادة واختيار ملف.');
     return;
   }
 
-  materials.push({
-    id: Date.now(),
-    name: name,
-    unit: unit,
-    file: file.name,
-    date: new Date().toLocaleDateString('ar')
-  });
+  saveBtn.disabled = true;
+  setUploadProgress(10, 'جاري فحص الملف وبدء الاستخراج...');
 
-  saveMaterials();
+  try {
+    const { ext, rawSections } = await parseStudyFile(file);
 
-  document.getElementById('subjectName').value = '';
-  document.getElementById('unitName').value = '';
-  document.getElementById('fileInput').value = '';
-  document.getElementById('selectedFile').textContent = '';
+    setUploadProgress(82, 'جاري تقسيم المحتوى واستخراج العناوين...');
+    const sections = splitLargeSections(rawSections);
+    const headings = extractHeadings(sections);
+    const fullText = sections.map(s => `--- ${s.title} ---\n${s.text}`).join('\n\n');
+    const language = detectLanguage(fullText);
 
-  alert('تم حفظ المادة في مكتبتك بنجاح.');
+    setUploadProgress(92, 'جاري حفظ المادة في مكتبتك...');
+    const newMaterial = {
+      id: Date.now(),
+      name,
+      unit,
+      file: file.name,
+      fileType: ext,
+      date: new Date().toLocaleDateString('ar'),
+      language,
+      headings,
+      sections,
+      fullText
+    };
 
-  renderMaterials();
-  renderHomeMaterials();
-  updateSubjectOptions();
-  showPage('library');
+    await putMaterialInDB(newMaterial);
+    materials.push(newMaterial);
+
+    setUploadProgress(100, 'تمت القراءة والحفظ بنجاح!');
+
+    document.getElementById('subjectName').value = '';
+    document.getElementById('unitName').value = '';
+    fileInputEl.value = '';
+    document.getElementById('selectedFile').textContent = '';
+
+    setTimeout(() => {
+      hideUploadProgress();
+      saveBtn.disabled = false;
+      renderMaterials();
+      renderHomeMaterials();
+      updateSubjectOptions();
+      showPage('library');
+      openReader(newMaterial.id);
+    }, 450);
+
+  } catch (err) {
+    hideUploadProgress();
+    saveBtn.disabled = false;
+    alert('تعذر استخراج الملف: ' + (err.message || 'خطأ غير متوقع'));
+  }
 }
+
+/* =========================================================
+   عرض المكتبة، إعادة التسمية، الحذف، واستعراض المحتوى
+   ========================================================= */
 
 function renderMaterials() {
   const container = document.getElementById('materialsList');
 
   if (!materials.length) {
     container.innerHTML = '<div class="empty">لا توجد مواد محفوظة حتى الآن.</div>';
+    closeReader();
     return;
   }
 
-  container.innerHTML = materials.map(item => `
-    <div class="list-item">
-      <div>
-        <strong>📘 ${escapeHTML(item.name)}</strong>
-        <div class="muted">${escapeHTML(item.file)} - ${escapeHTML(item.date)}</div>
-        <div class="muted">${escapeHTML(item.unit || '')}</div>
+  container.innerHTML = materials.map(item => {
+    const sectionsCount = Array.isArray(item.sections) ? item.sections.length : 0;
+    const langLabel = item.language ? ` | اللغة: ${item.language}` : '';
+    const partsLabel = sectionsCount ? ` | ${sectionsCount} قسم/صفحة` : '';
+
+    return `
+      <div class="list-item">
+        <div>
+          <strong>📘 ${escapeHTML(item.name)}</strong>
+          <div class="muted">${escapeHTML(item.file)} - ${escapeHTML(item.date)}${escapeHTML(langLabel)}${escapeHTML(partsLabel)}</div>
+          ${item.unit ? `<div class="muted">الوحدة/الفصل: ${escapeHTML(item.unit)}</div>` : ''}
+        </div>
+        <div class="item-actions">
+          <button class="secondary-btn" onclick="openReader(${item.id})">📖 استعراض</button>
+          <button class="secondary-btn" onclick="renameMaterial(${item.id})">✏️ إعادة تسمية</button>
+          <button class="danger-btn" onclick="deleteMaterial(${item.id})">حذف</button>
+        </div>
       </div>
-      <button class="tag" onclick="deleteMaterial(${item.id})">حذف</button>
-    </div>
-  `).join('');
+    `;
+  }).join('');
 }
 
 function renderHomeMaterials() {
@@ -1012,14 +1560,116 @@ function renderHomeMaterials() {
   `).join('');
 }
 
-function deleteMaterial(id) {
-  if (!confirm('هل تريد حذف هذه المادة من المكتبة؟')) return;
+async function renameMaterial(id) {
+  const item = materials.find(m => m.id === id);
+  if (!item) return;
 
-  materials = materials.filter(item => item.id !== id);
-  saveMaterials();
+  const updatedName = prompt('أدخل الاسم الجديد للمادة:', item.name);
+  if (updatedName === null) return;
+
+  const cleanName = updatedName.trim();
+  if (!cleanName) {
+    alert('لا يمكن أن يكون اسم المادة فارغاً.');
+    return;
+  }
+
+  item.name = cleanName;
+  await putMaterialInDB(item);
   renderMaterials();
   renderHomeMaterials();
   updateSubjectOptions();
+
+  const readerPanel = document.getElementById('readerPanel');
+  if (readerPanel.style.display === 'block' && readerPanel.dataset.currentId === String(id)) {
+    document.getElementById('readerTitle').textContent = `📖 محتوى المادة: ${item.name}`;
+  }
+}
+
+async function deleteMaterial(id) {
+  if (!confirm('هل تريد حذف هذه المادة من المكتبة؟')) return;
+
+  await deleteMaterialFromDB(id);
+  materials = materials.filter(item => item.id !== id);
+
+  const readerPanel = document.getElementById('readerPanel');
+  if (readerPanel.dataset.currentId === String(id)) {
+    closeReader();
+  }
+
+  renderMaterials();
+  renderHomeMaterials();
+  updateSubjectOptions();
+}
+
+function openReader(id) {
+  const item = materials.find(m => m.id === id);
+  if (!item) return;
+
+  const readerPanel = document.getElementById('readerPanel');
+  const metaEl = document.getElementById('readerMeta');
+  const headingsEl = document.getElementById('readerHeadings');
+  const tabsEl = document.getElementById('sectionTabs');
+  const textEl = document.getElementById('readerText');
+
+  readerPanel.style.display = 'block';
+  readerPanel.dataset.currentId = String(id);
+  document.getElementById('readerTitle').textContent = `📖 محتوى المادة: ${item.name}`;
+
+  const sections = Array.isArray(item.sections) && item.sections.length
+    ? item.sections
+    : [{ title: 'النص المستخرج', text: item.fullText || 'لا يوجد نص محفوظ لهذه المادة.' }];
+
+  const totalChars = sections.reduce((acc, s) => acc + (s.text ? s.text.length : 0), 0);
+
+  metaEl.innerHTML = `
+    <span class="tag">الملف: ${escapeHTML(item.file)}</span>
+    <span class="tag">اللغة: ${escapeHTML(item.language || 'غير محدد')}</span>
+    <span class="tag">الأقسام: ${sections.length}</span>
+    <span class="tag">عدد الأحرف: ${totalChars.toLocaleString()}</span>
+  `;
+
+  if (Array.isArray(item.headings) && item.headings.length) {
+    headingsEl.style.display = 'block';
+    headingsEl.innerHTML = `
+      <strong>📌 عناوين ونقاط مستخرجة تلقائياً:</strong>
+      <ul>${item.headings.map(h => `<li>${escapeHTML(h)}</li>`).join('')}</ul>
+    `;
+  } else {
+    headingsEl.style.display = 'none';
+  }
+
+  tabsEl.innerHTML = `
+    <button class="sec-tab active" data-sec="all">النص الكامل</button>
+    ${sections.map((sec, idx) => `
+      <button class="sec-tab" data-sec="${idx}">${escapeHTML(sec.title)}</button>
+    `).join('')}
+  `;
+
+  function showSectionView(secKey) {
+    tabsEl.querySelectorAll('.sec-tab').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.sec === secKey);
+    });
+
+    if (secKey === 'all') {
+      textEl.textContent = sections.map(s => `【 ${s.title} 】\n${s.text}`).join('\n\n');
+    } else {
+      const idx = Number(secKey);
+      textEl.textContent = sections[idx] ? sections[idx].text : '';
+    }
+  }
+
+  tabsEl.querySelectorAll('.sec-tab').forEach(btn => {
+    btn.addEventListener('click', () => showSectionView(btn.dataset.sec));
+  });
+
+  showSectionView('all');
+  readerPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function closeReader() {
+  const readerPanel = document.getElementById('readerPanel');
+  readerPanel.style.display = 'none';
+  readerPanel.dataset.currentId = '';
 }
 
 function updateSubjectOptions() {
@@ -1233,7 +1883,8 @@ document.getElementById('searchInput').addEventListener('input', function() {
   if (!value) return;
 
   const match = materials.find(item =>
-    item.name.toLowerCase().includes(value)
+    item.name.toLowerCase().includes(value) ||
+    (item.fullText && item.fullText.toLowerCase().includes(value))
   );
 
   if (match) showPage('library');
@@ -1249,11 +1900,9 @@ if (savedName) {
     `مرحباً بك يا ${savedName} 👋`;
 }
 
-renderMaterials();
-renderHomeMaterials();
-updateSubjectOptions();
 renderExam();
 renderResults();
+loadMaterials();
 
 </script>
 
